@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "\"Payment\"")
@@ -15,8 +16,8 @@ import java.time.LocalDateTime;
 public class Payment extends BaseEntity {
 
     @Id
-    @Column(name = "payment_id", columnDefinition = "binary(16)")
-    private byte[] paymentId;
+    @Column(name = "payment_id")
+    private UUID paymentId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_transaction_id", nullable = false)
@@ -36,10 +37,10 @@ public class Payment extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private PaymentStatus status;
 
-    public static Payment create(byte[] paymentId, WalletTransaction walletTransaction,
+    public static Payment create(WalletTransaction walletTransaction,
                                   String tossOrderId, String method, Long totalAmount) {
         Payment p = new Payment();
-        p.paymentId = paymentId;
+        p.paymentId = UUID.randomUUID();
         p.walletTransaction = walletTransaction;
         p.tossOrderId = tossOrderId;
         p.method = method;
