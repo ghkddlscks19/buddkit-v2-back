@@ -32,20 +32,14 @@ public class Message {
 
     private LocalDateTime sentAt;
 
-    private Boolean deleted;
+    private LocalDateTime deletedAt;
 
-    // 메시지 순서/저장 키
-    @Column(name = "\"Key\"", nullable = false)
-    private String messageKey;
-
-    public static Message create(ChatRoom chatRoom, User user, String text, String messageKey) {
+    public static Message create(ChatRoom chatRoom, User user, String text) {
         Message m = new Message();
         m.chatRoom = chatRoom;
         m.user = user;
         m.text = text;
         m.sentAt = LocalDateTime.now();
-        m.deleted = false;
-        m.messageKey = messageKey;
         return m;
     }
 }

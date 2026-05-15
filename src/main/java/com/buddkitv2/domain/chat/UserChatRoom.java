@@ -12,33 +12,30 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserChatRoom {
 
-    @Id
-    @Column(name = "user_chat_room_id")
-    private String userChatRoomId;
+    @EmbeddedId
+    private UserChatRoomId id;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("chatRoomId")
     @JoinColumn(name = "chat_room_id", nullable = false)
     private ChatRoom chatRoom;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("userId")
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Enumerated(EnumType.STRING)
     private ChatRoomRole role;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private Long lastReadMessageId;
 
-    // 메시지 읽음 위치 추적용 키
-    @Column(name = "\"Key\"", nullable = false)
-    private String readKey;
-
-    public static UserChatRoom create(String id, ChatRoom chatRoom, User user,
-                                       ChatRoomRole role, String readKey) {
+    public static UserChatRoom create(ChatRoom chatRoom, User user, ChatRoomRole role) {
         UserChatRoom ucr = new UserChatRoom();
-        ucr.userChatRoomId = id;
+        ucr.id = new UserChatRoomId(chatRoom.getId(), user.getId());
         ucr.chatRoom = chatRoom;
         ucr.user = user;
         ucr.role = role;
-        ucr.readKey = readKey;
         return ucr;
     }
 }
