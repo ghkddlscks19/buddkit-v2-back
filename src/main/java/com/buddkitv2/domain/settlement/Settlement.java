@@ -8,7 +8,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -26,8 +25,7 @@ public class Settlement extends BaseEntity {
     @JoinColumn(name = "schedule_id", nullable = false)
     private Schedule schedule;
 
-    @Column(precision = 18, scale = 2)
-    private BigDecimal sum;
+    private Long sum;
 
     @Enumerated(EnumType.STRING)
     private SettlementStatus status;
@@ -38,7 +36,7 @@ public class Settlement extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    public static Settlement create(Schedule schedule, BigDecimal sum, User user) {
+    public static Settlement create(Schedule schedule, Long sum, User user) {
         Settlement s = new Settlement();
         s.schedule = schedule;
         s.sum = sum;

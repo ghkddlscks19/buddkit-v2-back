@@ -22,12 +22,12 @@ public class Wallet extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    private Integer balance;
+    private Long balance;
 
     public static Wallet create(User user) {
         Wallet w = new Wallet();
         w.user = user;
-        w.balance = 0;
+        w.balance = 0L;
         return w;
     }
 }

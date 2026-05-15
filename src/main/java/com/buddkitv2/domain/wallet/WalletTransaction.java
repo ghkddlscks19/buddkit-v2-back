@@ -29,10 +29,10 @@ public class WalletTransaction extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private WalletTransactionType type;
 
-    private Integer balance;
+    private Long balance;
 
     public static WalletTransaction create(Wallet wallet, Wallet targetWallet,
-                                            WalletTransactionType type, Integer balance) {
+                                            WalletTransactionType type, Long balance) {
         WalletTransaction wt = new WalletTransaction();
         wt.wallet = wallet;
         wt.targetWallet = targetWallet;

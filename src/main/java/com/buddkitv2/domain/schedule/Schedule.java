@@ -28,7 +28,7 @@ public class Schedule extends BaseEntity {
     @Column(length = 255)
     private String location;
 
-    private Integer cost;
+    private Long cost;
 
     @Enumerated(EnumType.STRING)
     private ScheduleStatus status;
@@ -41,7 +41,7 @@ public class Schedule extends BaseEntity {
     private Club club;
 
     public static Schedule create(String name, LocalDateTime scheduleTime, String location,
-                                   Integer cost, Integer limit, Club club) {
+                                   Long cost, Integer limit, Club club) {
         Schedule s = new Schedule();
         s.name = name;
         s.scheduleTime = scheduleTime;

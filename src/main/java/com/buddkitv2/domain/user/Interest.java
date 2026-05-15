@@ -18,4 +18,7 @@ public class Interest {
 
     @Enumerated(EnumType.STRING)
     private InterestCategory category;
+
+    @Column(length = 20)
+    private String name;
 }
