@@ -1,5 +1,6 @@
 package com.buddkitv2.domain.club;
 
+import com.buddkitv2.domain.common.Address;
 import com.buddkitv2.domain.common.BaseEntity;
 import com.buddkitv2.domain.user.Interest;
 import jakarta.persistence.*;
@@ -28,27 +29,24 @@ public class Club extends BaseEntity {
 
     private String clubImage;
 
-    @Column(length = 20)
-    private String city;
-
-    @Column(length = 20)
-    private String district;
-
     private Integer memberCount;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "address_id", nullable = false)
+    private Address address;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "interest_id", nullable = false)
     private Interest interest;
 
     public static Club create(String name, Integer userLimit, String description,
-                               String clubImage, String city, String district, Interest interest) {
+                               String clubImage, Address address, Interest interest) {
         Club club = new Club();
         club.name = name;
         club.userLimit = userLimit;
         club.description = description;
         club.clubImage = clubImage;
-        club.city = city;
-        club.district = district;
+        club.address = address;
         club.memberCount = 1;
         club.interest = interest;
         return club;

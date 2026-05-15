@@ -1,5 +1,6 @@
 package com.buddkitv2.domain.user;
 
+import com.buddkitv2.domain.common.Address;
 import com.buddkitv2.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -29,11 +30,9 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
-    @Column(length = 20)
-    private String city;
-
-    @Column(length = 20)
-    private String district;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "address_id")
+    private Address address;
 
     private String profileImageUrl;
 
