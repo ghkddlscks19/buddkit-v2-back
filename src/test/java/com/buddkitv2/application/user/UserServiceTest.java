@@ -1,52 +1,73 @@
 package com.buddkitv2.application.user;
 
-import com.buddkitv2.domain.user.User;
-import com.buddkitv2.domain.user.UserRepository;
+import com.buddkitv2.api.user.RegisterRequest;
+import com.buddkitv2.domain.common.Address;
+import com.buddkitv2.domain.common.AddressRepository;
+import com.buddkitv2.domain.user.*;
+import com.buddkitv2.domain.wallet.WalletRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
+import java.time.LocalDate;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@Transactional
 class UserServiceTest {
 
-    @Mock
-    private UserRepository userRepository;
-
-    @InjectMocks
+    @Autowired
     private UserService userService;
 
-    private final Long kakaoId = 12345L;
-    private final String nickname = "테스트유저";
-    private final String profileImageUrl = "https://example.com/img.jpg";
+    @Autowired
+    private UserRepository userRepository;
 
-    @Test
-    void 기존_회원이면_DB_조회_결과를_반환한다() {
-        User existing = User.create(kakaoId, nickname, profileImageUrl);
-        when(userRepository.findByKakaoId(kakaoId)).thenReturn(Optional.of(existing));
+    @Autowired
+    private AddressRepository addressRepository;
 
-        User result = userService.findOrCreate(kakaoId, nickname, profileImageUrl);
+    @Autowired
+    private InterestRepository interestRepository;
 
-        assertThat(result.getKakaoId()).isEqualTo(kakaoId);
-        verify(userRepository, never()).save(any());
+    @Autowired
+    private WalletRepository walletRepository;
+
+    private static final Long KAKAO_ID = 99999L;
+
+    private Address address;
+    private List<InterestCategory> categories;
+
+    @BeforeEach
+    void setUp() {
+        address = addressRepository.save(Address.of("서울특별시", "테스트구", 99000));
+        interestRepository.save(Interest.of(InterestCategory.CULTURE, "문화"));
+        categories = List.of(InterestCategory.CULTURE);
+    }
+
+    private RegisterRequest request() {
+        return new RegisterRequest("테스트유저", LocalDate.of(2000, 1, 1),
+                Gender.FEMALE, address.getCity(), address.getDistrict(), categories);
     }
 
     @Test
-    void 신규_회원이면_저장_후_반환한다() {
-        User saved = User.create(kakaoId, nickname, profileImageUrl);
-        when(userRepository.findByKakaoId(kakaoId)).thenReturn(Optional.empty());
-        when(userRepository.save(any(User.class))).thenReturn(saved);
+    void 신규_회원_가입_시_User_Wallet_UserInterest가_생성된다() {
+        UserService.RegisterResult result = userService.register(KAKAO_ID, request(), null);
 
-        User result = userService.findOrCreate(kakaoId, nickname, profileImageUrl);
+        assertThat(userRepository.findByKakaoId(KAKAO_ID)).isPresent();
+        assertThat(walletRepository.findById(result.getUserId())).isNotNull();
+        assertThat(result.getPoint()).isEqualTo(100_000L);
+    }
 
-        assertThat(result.getKakaoId()).isEqualTo(kakaoId);
-        verify(userRepository).save(any(User.class));
+    @Test
+    void 이미_가입된_회원은_재가입_시_예외를_던진다() {
+        userService.register(KAKAO_ID, request(), null);
+
+        assertThatThrownBy(() -> userService.register(KAKAO_ID, request(), null))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("이미 가입된 회원입니다.");
     }
 }

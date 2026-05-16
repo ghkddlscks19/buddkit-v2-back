@@ -1,5 +1,6 @@
 package com.buddkitv2.api.common;
 
+import com.buddkitv2.infra.security.TempTokenExpiredException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -16,6 +17,11 @@ public class GlobalExceptionHandler {
                 .findFirst()
                 .orElse("잘못된 요청입니다.");
         return ResponseEntity.badRequest().body(ApiResponse.fail(message));
+    }
+
+    @ExceptionHandler(TempTokenExpiredException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTempTokenExpired(TempTokenExpiredException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.fail(e.getMessage()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
