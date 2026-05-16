@@ -26,10 +26,10 @@
 - `Settlement.completedTime`: 전체 정산 건이 완료된 시각. 모든 참여자의 정산이 끝났을 때 찍힘.
 
 ### Payment
-토스페이먼츠 결제 건. `WalletTransaction`을 FK로 참조하며, 항상 `CHARGE` 타입 거래에만 연결됨. `TRANSFER` 거래에 Payment가 연결되는 경우는 없으며, 이 제약은 서비스 레이어에서 보장.
+토스페이먼츠 결제 건. `WalletTransaction`을 FK로 참조하며, 항상 `CHARGE` 타입 거래에만 연결됨. `TRANSFER` 거래에 Payment가 연결되는 경우는 없으며, 이 제약은 서비스 레이어에서 보장. 모든 정산은 앱 내 포인트(Wallet)로만 처리 — `UserSettlementType`은 `POINT` 단일.
 
 ### 알림 (Notification)
-- `SETTLEMENT_REQUESTED`, `SCHEDULE_CREATED`: DB에 `Notification` 행 저장 + FCM 전송. 목록 조회 가능.
+- `SETTLEMENT`, `SCHEDULE`, `LIKE`, `COMMENT`: DB에 `Notification` 행 저장 + FCM 전송. 목록 조회 가능.
 - `CHAT`: FCM 전송만. `Notification` 행을 저장하지 않음. 서비스 레이어에서 insert를 생략하는 방식으로 보장.
 
 ### 금액 타입
