@@ -1,6 +1,7 @@
 package com.buddkitv2.domain.user.service;
 
 import com.buddkitv2.domain.user.dto.request.RegisterRequest;
+import com.buddkitv2.domain.user.dto.response.MyPageResponse;
 import com.buddkitv2.domain.common.Address;
 import com.buddkitv2.domain.common.AddressRepository;
 import com.buddkitv2.domain.user.entity.Interest;
@@ -13,6 +14,11 @@ import com.buddkitv2.domain.user.repository.UserRepository;
 import com.buddkitv2.domain.wallet.entity.Wallet;
 import com.buddkitv2.domain.wallet.repository.WalletRepository;
 import com.buddkitv2.global.config.S3Service;
+import com.buddkitv2.global.exception.AlreadyRegisteredException;
+import com.buddkitv2.global.exception.InvalidAddressException;
+import com.buddkitv2.global.exception.InvalidInterestException;
+import com.buddkitv2.global.exception.UserNotFoundException;
+import com.buddkitv2.global.exception.WalletNotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -44,15 +50,15 @@ public class UserService {
     @Transactional
     public RegisterResult register(Long kakaoId, RegisterRequest request, MultipartFile profileImage) {
         if (userRepository.findByKakaoId(kakaoId).isPresent()) {
-            throw new IllegalStateException("이미 가입된 회원입니다.");
+            throw new AlreadyRegisteredException();
         }
 
         Address address = addressRepository.findByCityAndDistrict(request.getCity(), request.getDistrict())
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 지역입니다."));
+                .orElseThrow(InvalidAddressException::new);
 
         List<Interest> interests = interestRepository.findByCategoryIn(request.getInterests());
         if (interests.size() != request.getInterests().size()) {
-            throw new IllegalArgumentException("유효하지 않은 관심사가 포함되어 있습니다.");
+            throw new InvalidInterestException();
         }
 
         String profileImageUrl = null;
@@ -70,6 +76,31 @@ public class UserService {
         walletRepository.save(wallet);
 
         return new RegisterResult(user.getId(), wallet.getBalance());
+    }
+
+    @Transactional(readOnly = true)
+    public MyPageResponse getMyPage(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
+
+        List<InterestCategory> interests = userInterestRepository.findByUserIdWithInterest(userId).stream()
+                .map(ui -> ui.getInterest().getCategory())
+                .toList();
+
+        Wallet wallet = walletRepository.findByUserId(userId)
+                .orElseThrow(WalletNotFoundException::new);
+
+        Address address = user.getAddress();
+        return new MyPageResponse(
+                user.getId(),
+                user.getNickname(),
+                user.getProfileImageUrl(),
+                address != null ? address.getCity() : null,
+                address != null ? address.getDistrict() : null,
+                user.getBirth(),
+                interests,
+                wallet.getBalance()
+        );
     }
 
     @Getter

@@ -1,6 +1,7 @@
 package com.buddkitv2.domain.user.controller;
 
 import com.buddkitv2.domain.user.dto.request.RegisterRequest;
+import com.buddkitv2.domain.user.dto.response.MyPageResponse;
 import com.buddkitv2.domain.user.dto.response.RegisterResponse;
 import com.buddkitv2.global.common.ApiResponse;
 import com.buddkitv2.domain.user.service.UserService;
@@ -10,6 +11,7 @@ import com.buddkitv2.global.security.TempTokenService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,6 +24,11 @@ public class UserController {
     private final TempTokenService tempTokenService;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
+
+    @GetMapping("/me")
+    public ApiResponse<MyPageResponse> getMyPage(@AuthenticationPrincipal Long userId) {
+        return ApiResponse.ok(userService.getMyPage(userId));
+    }
 
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<RegisterResponse> register(
