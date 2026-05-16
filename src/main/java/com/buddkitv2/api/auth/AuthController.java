@@ -22,7 +22,7 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@Valid @RequestBody RefreshRequest request) {
-        String rt = request.refreshToken();
+        String rt = request.getRefreshToken();
 
         if (!jwtTokenProvider.validateToken(rt) || jwtTokenProvider.isAccessToken(rt)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
