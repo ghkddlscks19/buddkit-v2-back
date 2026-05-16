@@ -49,7 +49,7 @@ public class RefreshTokenService {
             }
             return sb.toString();
         } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 unavailable", e);
+            throw new RuntimeException(e);
         }
     }
 }

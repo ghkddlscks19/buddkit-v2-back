@@ -1,5 +1,8 @@
 package com.buddkitv2.global.config;
 
+import com.buddkitv2.global.exception.FileUploadException;
+import com.buddkitv2.global.exception.FileSizeExceededException;
+import com.buddkitv2.global.exception.InvalidFileTypeException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -41,17 +44,17 @@ public class S3Service {
                     RequestBody.fromBytes(file.getBytes())
             );
         } catch (IOException e) {
-            throw new IllegalStateException("파일 업로드에 실패했습니다.");
+            throw new FileUploadException();
         }
         return "https://" + bucket + ".s3." + region + ".amazonaws.com/" + key;
     }
 
     private void validate(MultipartFile file) {
         if (file.getSize() > MAX_SIZE) {
-            throw new IllegalArgumentException("파일 크기는 5MB를 초과할 수 없습니다.");
+            throw new FileSizeExceededException();
         }
         if (!ALLOWED_TYPES.contains(file.getContentType())) {
-            throw new IllegalArgumentException("jpeg, png 형식의 이미지만 업로드 가능합니다.");
+            throw new InvalidFileTypeException();
         }
     }
 }
