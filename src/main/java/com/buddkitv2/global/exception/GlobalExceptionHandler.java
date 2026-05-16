@@ -24,14 +24,29 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.fail(e.getMessage()));
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException e) {
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUserNotFound(UserNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler(AlreadyRegisteredException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAlreadyRegistered(AlreadyRegisteredException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler({InvalidAddressException.class, InvalidInterestException.class})
+    public ResponseEntity<ApiResponse<Void>> handleBadRequest(RuntimeException e) {
         return ResponseEntity.badRequest().body(ApiResponse.fail(e.getMessage()));
     }
 
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<ApiResponse<Void>> handleIllegalState(IllegalStateException e) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.fail(e.getMessage()));
+    @ExceptionHandler({FileSizeExceededException.class, InvalidFileTypeException.class})
+    public ResponseEntity<ApiResponse<Void>> handleFileValidation(RuntimeException e) {
+        return ResponseEntity.badRequest().body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler({FileUploadException.class, WalletNotFoundException.class})
+    public ResponseEntity<ApiResponse<Void>> handleInternalError(RuntimeException e) {
+        return ResponseEntity.internalServerError().body(ApiResponse.fail(e.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
