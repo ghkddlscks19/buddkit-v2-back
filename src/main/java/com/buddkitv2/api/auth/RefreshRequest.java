@@ -1,6 +1,15 @@
 package com.buddkitv2.api.auth;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-public record RefreshRequest(@NotBlank String refreshToken) {
+@Getter
+@Setter
+@NoArgsConstructor
+public class RefreshRequest {
+
+    @NotBlank
+    private String refreshToken;
 }
