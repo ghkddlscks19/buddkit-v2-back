@@ -38,14 +38,17 @@ public class Payment extends BaseEntity {
     private PaymentStatus status;
 
     public static Payment create(WalletTransaction walletTransaction,
-                                  String tossOrderId, String method, Long totalAmount) {
+                                  String tossPaymentKey, String tossOrderId,
+                                  String method, Long totalAmount, LocalDateTime approvedAt) {
         Payment p = new Payment();
         p.paymentId = UUID.randomUUID();
         p.walletTransaction = walletTransaction;
+        p.tossPaymentKey = tossPaymentKey;
         p.tossOrderId = tossOrderId;
         p.method = method;
         p.totalAmount = totalAmount;
-        p.status = PaymentStatus.READY;
+        p.approvedAt = approvedAt;
+        p.status = PaymentStatus.DONE;
         return p;
     }
 }
