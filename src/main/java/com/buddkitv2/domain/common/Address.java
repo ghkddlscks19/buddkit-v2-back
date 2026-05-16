@@ -23,4 +23,12 @@ public class Address {
     private String district;
 
     private Integer code;
+
+    public static Address of(String city, String district, Integer code) {
+        Address a = new Address();
+        a.city = city;
+        a.district = district;
+        a.code = code;
+        return a;
+    }
 }
