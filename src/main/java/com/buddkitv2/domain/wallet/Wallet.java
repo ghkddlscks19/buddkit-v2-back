@@ -30,4 +30,11 @@ public class Wallet extends BaseEntity {
         w.balance = 0L;
         return w;
     }
+
+    public static Wallet createWithBonus(User user, Long bonus) {
+        Wallet w = new Wallet();
+        w.user = user;
+        w.balance = bonus;
+        return w;
+    }
 }

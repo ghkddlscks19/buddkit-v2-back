@@ -21,4 +21,11 @@ public class Interest {
 
     @Column(length = 20)
     private String name;
+
+    public static Interest of(InterestCategory category, String name) {
+        Interest i = new Interest();
+        i.category = category;
+        i.name = name;
+        return i;
+    }
 }

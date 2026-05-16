@@ -51,6 +51,19 @@ public class User extends BaseEntity {
         return user;
     }
 
+    public static User register(Long kakaoId, String nickname, LocalDate birth, Gender gender,
+                                Address address, String profileImageUrl) {
+        User user = new User();
+        user.kakaoId = kakaoId;
+        user.nickname = nickname;
+        user.birth = birth;
+        user.gender = gender;
+        user.address = address;
+        user.profileImageUrl = profileImageUrl;
+        user.status = UserStatus.ACTIVE;
+        return user;
+    }
+
     public void updateFcmToken(String fcmToken) {
         this.fcmToken = fcmToken;
     }
