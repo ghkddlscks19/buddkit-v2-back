@@ -98,6 +98,7 @@ public class UserService {
                 address != null ? address.getCity() : null,
                 address != null ? address.getDistrict() : null,
                 user.getBirth(),
+                user.getGender(),
                 interests,
                 wallet.getBalance()
         );
