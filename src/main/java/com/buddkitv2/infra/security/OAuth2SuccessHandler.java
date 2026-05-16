@@ -26,9 +26,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         // TODO: UserService.findOrCreate(kakaoId) — USER 도메인 구현 후 교체
         Long userId = kakaoId;
 
-        String token = jwtTokenProvider.generateToken(userId);
+        String accessToken = jwtTokenProvider.generateAccessToken(userId);
 
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write("{\"token\":\"" + token + "\"}");
+        response.getWriter().write("{\"token\":\"" + accessToken + "\"}");
     }
 }
