@@ -20,6 +20,9 @@
 
 # Clean build
 ./gradlew clean build
+
+# 컴파일만 빠르게 확인
+./gradlew compileJava compileTestJava
 ```
 
 `src/main/resources/application*.yml`은 gitignore 대상 — 절대 커밋하지 않는다.
@@ -74,15 +77,44 @@ Entry point: `com.buddkitv2.BuddkitV2Application`
 
 External dependencies (PostgreSQL, Redis, Kafka, OAuth2 provider) must be configured in `application.yml` before the application can start. Add environment-specific values via `application-{profile}.yml` or environment variables; never commit credentials.
 
-## 패키지 이전 시 주의 사항
+## 예외 처리 규칙
 
-`git mv`로 파일을 이동할 때 반드시 아래를 확인한다.
+`IllegalArgumentException`, `IllegalStateException` 등 Java 기본 예외를 서비스 로직에서 직접 던지지 않는다. 반드시 `global/exception/`에 커스텀 예외를 만들어 사용한다.
 
-1. **package 선언 업데이트** — 파일 맨 위 `package` 선언이 새 디렉터리 경로와 일치해야 한다.
-2. **같은 패키지 참조에 import 추가** — 기존에 같은 패키지에 있어 import 없이 쓰던 클래스들이, 이동 후 다른 패키지로 분리되면 반드시 명시적 import가 필요하다.
-   - 예: `api/auth/` 에 함께 있던 `RefreshRequest`, `TokenResponse`가 `dto/request/`, `dto/response/`로 분리 → `AuthController`에 import 추가 필수
-3. **와일드카드 import 교체** — `import com.buddkitv2.domain.user.*` 같은 와일드카드는 패키지 분리 후 동작하지 않는다. 필요한 클래스를 개별 import로 교체한다.
-4. **이전 후 즉시 컴파일 확인** — `./gradlew compileJava compileTestJava`로 검증한다. 빌드가 통과해야 다음 단계로 넘어간다.
+```java
+// 잘못된 예
+throw new IllegalArgumentException("유효하지 않은 지역입니다.");
+throw new IllegalStateException("이미 가입된 회원입니다.");
+
+// 올바른 예
+throw new InvalidAddressException();
+throw new AlreadyRegisteredException();
+```
+
+커스텀 예외는 `RuntimeException`을 상속하며, `GlobalExceptionHandler`에 해당 예외 핸들러를 추가해 HTTP 상태 코드와 메시지를 명시적으로 관리한다. 기본 예외를 남기면 전역 핸들러에서 상태 코드를 제어할 수 없고, 어떤 오류인지 코드 검색도 불가능하다.
+
+## 공통 응답 포맷
+
+모든 API 응답은 `ApiResponse<T>`로 감싼다.
+
+```json
+{ "success": true,  "data": { ... }, "message": null }
+{ "success": false, "data": null,    "message": "에러 메시지" }
+```
+
+컨트롤러에서는 `ApiResponse.ok(data)` / `ApiResponse.fail(message)` 를 사용한다.
+
+## 인증 필요 엔드포인트
+
+JWT 필터가 `SecurityContext`에 `Long userId`를 principal로 저장한다. 인증이 필요한 엔드포인트는 `@AuthenticationPrincipal Long userId`로 추출한다.
+
+```java
+@GetMapping("/me")
+public ApiResponse<MyPageResponse> getMyPage(@AuthenticationPrincipal Long userId) { ... }
+```
+
+인증 불필요 경로 (`SecurityConfig.permitAll`):
+`/actuator/health`, `/oauth2/**`, `/login/**`, `/auth/refresh`, `/swagger-ui/**`, `/v3/api-docs/**`, `/users/register`
 
 ## References
 
