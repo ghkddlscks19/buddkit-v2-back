@@ -14,6 +14,10 @@ import com.buddkitv2.domain.user.entity.UserInterest;
 import com.buddkitv2.domain.user.repository.InterestRepository;
 import com.buddkitv2.domain.user.repository.UserInterestRepository;
 import com.buddkitv2.domain.user.repository.UserRepository;
+import com.buddkitv2.domain.settlement.entity.UserSettlement;
+import com.buddkitv2.domain.settlement.repository.UserSettlementRepository;
+import com.buddkitv2.domain.user.dto.response.SettlementHistoryResponse;
+import com.buddkitv2.domain.user.dto.response.TransactionResponse;
 import com.buddkitv2.domain.wallet.entity.Payment;
 import com.buddkitv2.domain.wallet.entity.Wallet;
 import com.buddkitv2.domain.wallet.entity.WalletTransaction;
@@ -21,6 +25,8 @@ import com.buddkitv2.domain.wallet.entity.WalletTransactionType;
 import com.buddkitv2.domain.wallet.repository.PaymentRepository;
 import com.buddkitv2.domain.wallet.repository.WalletRepository;
 import com.buddkitv2.domain.wallet.repository.WalletTransactionRepository;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import com.buddkitv2.global.config.S3Service;
 import com.buddkitv2.global.config.TossPaymentClient;
 import com.buddkitv2.global.exception.AlreadyRegisteredException;
@@ -53,6 +59,7 @@ public class UserService {
     private final WalletTransactionRepository walletTransactionRepository;
     private final PaymentRepository paymentRepository;
     private final TossPaymentClient tossPaymentClient;
+    private final UserSettlementRepository userSettlementRepository;
 
     private static final long SIGNUP_BONUS = 100_000L;
 
@@ -179,6 +186,41 @@ public class UserService {
         wallet.charge(confirmed.totalAmount());
 
         return new ChargeResponse(wallet.getBalance());
+    }
+
+    @Transactional(readOnly = true)
+    public List<TransactionResponse> getTransactions(Long userId, Long lastId, int size) {
+        Wallet wallet = walletRepository.findByUserId(userId)
+                .orElseThrow(WalletNotFoundException::new);
+        Pageable pageable = PageRequest.of(0, size);
+
+        List<WalletTransaction> transactions = lastId == null
+                ? walletTransactionRepository.findByWallet_IdOrderByIdDesc(wallet.getId(), pageable)
+                : walletTransactionRepository.findByWallet_IdAndIdLessThanOrderByIdDesc(wallet.getId(), lastId, pageable);
+
+        return transactions.stream()
+                .map(t -> new TransactionResponse(t.getId(), t.getType(), t.getBalance(), t.getCreatedAt()))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<SettlementHistoryResponse> getSettlements(Long userId, Long lastId, int size) {
+        Pageable pageable = PageRequest.of(0, size);
+
+        List<UserSettlement> settlements = lastId == null
+                ? userSettlementRepository.findByUserIdWithSettlement(userId, pageable)
+                : userSettlementRepository.findByUserIdAndLastIdWithSettlement(userId, lastId, pageable);
+
+        return settlements.stream()
+                .map(us -> new SettlementHistoryResponse(
+                        us.getId(),
+                        us.getStatus(),
+                        us.getType(),
+                        us.getSettlement().getSum(),
+                        us.getCompletedTime(),
+                        us.getCreatedAt()
+                ))
+                .toList();
     }
 
     @Getter

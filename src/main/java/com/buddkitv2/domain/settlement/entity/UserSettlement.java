@@ -1,5 +1,6 @@
 package com.buddkitv2.domain.settlement.entity;
 
+import com.buddkitv2.domain.common.BaseEntity;
 import com.buddkitv2.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -12,7 +13,7 @@ import java.time.LocalDateTime;
 @Table(name = "\"USER_SETTLEMENT\"")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class UserSettlement {
+public class UserSettlement extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

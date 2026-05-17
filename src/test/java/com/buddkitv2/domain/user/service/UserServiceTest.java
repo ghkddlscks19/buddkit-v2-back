@@ -5,6 +5,8 @@ import com.buddkitv2.domain.user.dto.request.ProfileUpdateRequest;
 import com.buddkitv2.domain.user.dto.request.RegisterRequest;
 import com.buddkitv2.domain.user.dto.response.ChargeResponse;
 import com.buddkitv2.domain.user.dto.response.MyPageResponse;
+import com.buddkitv2.domain.user.dto.response.TransactionResponse;
+import com.buddkitv2.domain.wallet.entity.WalletTransactionType;
 import com.buddkitv2.domain.common.Address;
 import com.buddkitv2.domain.common.AddressRepository;
 import com.buddkitv2.domain.user.entity.Gender;
@@ -155,5 +157,33 @@ class UserServiceTest {
         User user = userRepository.findById(userId).orElseThrow();
         assertThat(user.getStatus()).isEqualTo(UserStatus.WITHDRAWN);
         assertThat(user.getFcmToken()).isNull();
+    }
+
+    @Test
+    void 거래내역_목록_조회_시_최신순으로_반환된다() {
+        UserService.RegisterResult result = userService.register(KAKAO_ID, request(), null);
+        Long userId = result.getUserId();
+
+        String paymentKey = "test_pk_456";
+        String orderId = "order_002";
+        Long amount = 30_000L;
+
+        given(tossPaymentClient.confirm(paymentKey, orderId, amount))
+                .willReturn(new TossPaymentClient.TossConfirmResult(
+                        paymentKey, orderId, "카드", amount,
+                        LocalDateTime.of(2026, 1, 2, 10, 0)
+                ));
+
+        ChargeRequest chargeRequest = new ChargeRequest();
+        chargeRequest.setPaymentKey(paymentKey);
+        chargeRequest.setOrderId(orderId);
+        chargeRequest.setAmount(amount);
+        userService.chargeWallet(userId, chargeRequest);
+
+        List<TransactionResponse> transactions = userService.getTransactions(userId, null, 20);
+
+        assertThat(transactions).hasSize(1);
+        assertThat(transactions.get(0).getType()).isEqualTo(WalletTransactionType.CHARGE);
+        assertThat(transactions.get(0).getBalance()).isEqualTo(amount);
     }
 }

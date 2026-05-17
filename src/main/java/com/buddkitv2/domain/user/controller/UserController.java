@@ -6,6 +6,10 @@ import com.buddkitv2.domain.user.dto.request.RegisterRequest;
 import com.buddkitv2.domain.user.dto.response.ChargeResponse;
 import com.buddkitv2.domain.user.dto.response.MyPageResponse;
 import com.buddkitv2.domain.user.dto.response.RegisterResponse;
+import com.buddkitv2.domain.user.dto.response.SettlementHistoryResponse;
+import com.buddkitv2.domain.user.dto.response.TransactionResponse;
+
+import java.util.List;
 import com.buddkitv2.global.common.ApiResponse;
 import com.buddkitv2.domain.user.service.UserService;
 import com.buddkitv2.global.security.JwtTokenProvider;
@@ -55,6 +59,24 @@ public class UserController {
             @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
     ) {
         return ApiResponse.ok(userService.updateProfile(userId, request, profileImage));
+    }
+
+    @GetMapping("/me/transactions")
+    public ApiResponse<List<TransactionResponse>> getTransactions(
+            @AuthenticationPrincipal Long userId,
+            @RequestParam(required = false) Long lastId,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return ApiResponse.ok(userService.getTransactions(userId, lastId, size));
+    }
+
+    @GetMapping("/me/settlements")
+    public ApiResponse<List<SettlementHistoryResponse>> getSettlements(
+            @AuthenticationPrincipal Long userId,
+            @RequestParam(required = false) Long lastId,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return ApiResponse.ok(userService.getSettlements(userId, lastId, size));
     }
 
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
