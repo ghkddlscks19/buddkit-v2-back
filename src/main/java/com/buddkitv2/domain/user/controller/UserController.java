@@ -1,5 +1,6 @@
 package com.buddkitv2.domain.user.controller;
 
+import com.buddkitv2.domain.user.dto.request.ProfileUpdateRequest;
 import com.buddkitv2.domain.user.dto.request.RegisterRequest;
 import com.buddkitv2.domain.user.dto.response.MyPageResponse;
 import com.buddkitv2.domain.user.dto.response.RegisterResponse;
@@ -28,6 +29,15 @@ public class UserController {
     @GetMapping("/me")
     public ApiResponse<MyPageResponse> getMyPage(@AuthenticationPrincipal Long userId) {
         return ApiResponse.ok(userService.getMyPage(userId));
+    }
+
+    @PatchMapping(value = "/me", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<MyPageResponse> updateProfile(
+            @AuthenticationPrincipal Long userId,
+            @RequestPart("data") @Valid ProfileUpdateRequest request,
+            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
+    ) {
+        return ApiResponse.ok(userService.updateProfile(userId, request, profileImage));
     }
 
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

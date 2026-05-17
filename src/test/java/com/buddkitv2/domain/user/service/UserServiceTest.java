@@ -1,6 +1,8 @@
 package com.buddkitv2.domain.user.service;
 
+import com.buddkitv2.domain.user.dto.request.ProfileUpdateRequest;
 import com.buddkitv2.domain.user.dto.request.RegisterRequest;
+import com.buddkitv2.domain.user.dto.response.MyPageResponse;
 import com.buddkitv2.domain.common.Address;
 import com.buddkitv2.domain.common.AddressRepository;
 import com.buddkitv2.domain.user.entity.Gender;
@@ -73,5 +75,27 @@ class UserServiceTest {
         assertThatThrownBy(() -> userService.register(KAKAO_ID, request(), null))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("이미 가입된 회원입니다.");
+    }
+
+    @Test
+    void 프로필_수정_시_닉네임과_관심사가_변경된다() {
+        UserService.RegisterResult result = userService.register(KAKAO_ID, request(), null);
+        Long userId = result.getUserId();
+
+        Address newAddress = addressRepository.save(Address.of("부산광역시", "해운대구", 99001));
+        interestRepository.save(Interest.of(InterestCategory.SPORTS, "운동/스포츠"));
+
+        ProfileUpdateRequest updateRequest = new ProfileUpdateRequest();
+        updateRequest.setNickname("변경닉네임");
+        updateRequest.setCity("부산광역시");
+        updateRequest.setDistrict("해운대구");
+        updateRequest.setInterests(List.of(InterestCategory.SPORTS));
+
+        userService.updateProfile(userId, updateRequest, null);
+
+        MyPageResponse profile = userService.getMyPage(userId);
+        assertThat(profile.getNickname()).isEqualTo("변경닉네임");
+        assertThat(profile.getCity()).isEqualTo("부산광역시");
+        assertThat(profile.getInterestList()).containsExactly(InterestCategory.SPORTS);
     }
 }

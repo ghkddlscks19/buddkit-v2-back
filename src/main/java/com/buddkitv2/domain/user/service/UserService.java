@@ -1,5 +1,6 @@
 package com.buddkitv2.domain.user.service;
 
+import com.buddkitv2.domain.user.dto.request.ProfileUpdateRequest;
 import com.buddkitv2.domain.user.dto.request.RegisterRequest;
 import com.buddkitv2.domain.user.dto.response.MyPageResponse;
 import com.buddkitv2.domain.common.Address;
@@ -102,6 +103,32 @@ public class UserService {
                 interests,
                 wallet.getBalance()
         );
+    }
+
+    @Transactional
+    public MyPageResponse updateProfile(Long userId, ProfileUpdateRequest request, MultipartFile profileImage) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
+
+        Address address = addressRepository.findByCityAndDistrict(request.getCity(), request.getDistrict())
+                .orElseThrow(InvalidAddressException::new);
+
+        List<Interest> interests = interestRepository.findByCategoryIn(request.getInterests());
+        if (interests.size() != request.getInterests().size()) {
+            throw new InvalidInterestException();
+        }
+
+        String profileImageUrl = user.getProfileImageUrl();
+        if (profileImage != null && !profileImage.isEmpty()) {
+            profileImageUrl = s3Service.upload(profileImage, "profiles");
+        }
+
+        user.updateProfile(request.getNickname(), address, profileImageUrl);
+
+        userInterestRepository.deleteAllByUserId(userId);
+        interests.forEach(interest -> userInterestRepository.save(UserInterest.create(user, interest)));
+
+        return getMyPage(userId);
     }
 
     @Getter
