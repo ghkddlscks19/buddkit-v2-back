@@ -36,4 +36,8 @@ public class FeedComment extends BaseEntity {
         fc.user = user;
         return fc;
     }
+
+    public void update(String content) {
+        this.content = content;
+    }
 }
