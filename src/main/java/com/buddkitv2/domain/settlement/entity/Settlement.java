@@ -44,4 +44,13 @@ public class Settlement extends BaseEntity {
         s.status = SettlementStatus.REQUESTED;
         return s;
     }
+
+    public void changeStatus(SettlementStatus status) {
+        this.status = status;
+    }
+
+    public void complete() {
+        this.status = SettlementStatus.COMPLETED;
+        this.completedTime = LocalDateTime.now();
+    }
 }

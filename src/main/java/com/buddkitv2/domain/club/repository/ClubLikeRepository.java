@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ClubLikeRepository extends JpaRepository<ClubLike, Long> {
 
@@ -15,4 +16,8 @@ public interface ClubLikeRepository extends JpaRepository<ClubLike, Long> {
 
     @Query("SELECT cl FROM ClubLike cl JOIN FETCH cl.club c JOIN FETCH c.address JOIN FETCH c.interest WHERE cl.user.id = :userId AND cl.id < :lastId ORDER BY cl.id DESC")
     List<ClubLike> findByUserIdAndLastIdWithClub(@Param("userId") Long userId, @Param("lastId") Long lastId, Pageable pageable);
+
+    Optional<ClubLike> findByClub_IdAndUser_Id(Long clubId, Long userId);
+
+    boolean existsByClub_IdAndUser_Id(Long clubId, Long userId);
 }

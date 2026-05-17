@@ -59,6 +59,61 @@ public class GlobalExceptionHandler {
         return ResponseEntity.internalServerError().body(ApiResponse.fail(e.getMessage()));
     }
 
+    @ExceptionHandler(ClubNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleClubNotFound(ClubNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler(ClubAccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleClubAccessDenied(ClubAccessDeniedException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler({ClubFullException.class, AlreadyJoinedClubException.class, AlreadyLikedClubException.class})
+    public ResponseEntity<ApiResponse<Void>> handleClubConflict(RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler({NotJoinedClubException.class, ClubLeaderCannotLeaveException.class})
+    public ResponseEntity<ApiResponse<Void>> handleClubBadRequest(RuntimeException e) {
+        return ResponseEntity.badRequest().body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler(ClubLikeNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleClubLikeNotFound(ClubLikeNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler(ScheduleNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleScheduleNotFound(ScheduleNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler(ScheduleAccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleScheduleAccessDenied(ScheduleAccessDeniedException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler({AlreadyJoinedScheduleException.class, ScheduleAlreadySettlingException.class, AlreadySettledException.class})
+    public ResponseEntity<ApiResponse<Void>> handleScheduleConflict(RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler({NotJoinedScheduleException.class, ScheduleNotRecruitingException.class, ScheduleFullException.class})
+    public ResponseEntity<ApiResponse<Void>> handleScheduleBadRequest(RuntimeException e) {
+        return ResponseEntity.badRequest().body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler(SettlementNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleSettlementNotFound(SettlementNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler(InsufficientBalanceException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInsufficientBalance(InsufficientBalanceException e) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(ApiResponse.fail(e.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
         return ResponseEntity.internalServerError().body(ApiResponse.fail("서버 오류가 발생했습니다."));

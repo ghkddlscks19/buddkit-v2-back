@@ -44,4 +44,17 @@ public class UserSettlement extends BaseEntity {
         us.status = UserSettlementStatus.REQUESTED;
         return us;
     }
+
+    public void complete() {
+        this.status = UserSettlementStatus.COMPLETED;
+        this.completedTime = LocalDateTime.now();
+    }
+
+    public void reserve() {
+        this.status = UserSettlementStatus.PENDING_CONFIRMATION;
+    }
+
+    public void rollback() {
+        this.status = UserSettlementStatus.REQUESTED;
+    }
 }

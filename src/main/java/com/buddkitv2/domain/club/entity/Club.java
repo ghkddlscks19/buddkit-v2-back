@@ -51,4 +51,22 @@ public class Club extends BaseEntity {
         club.interest = interest;
         return club;
     }
+
+    public void update(String name, Integer userLimit, String description,
+                       String clubImage, Address address, Interest interest) {
+        this.name = name;
+        this.userLimit = userLimit;
+        this.description = description;
+        this.clubImage = clubImage;
+        this.address = address;
+        this.interest = interest;
+    }
+
+    public void incrementMemberCount() {
+        this.memberCount++;
+    }
+
+    public void decrementMemberCount() {
+        this.memberCount--;
+    }
 }
