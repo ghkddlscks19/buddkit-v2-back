@@ -93,12 +93,28 @@ public class ClubService {
 
     @Transactional
     public void joinClub(Long userId, Long clubId) {
-        throw new UnsupportedOperationException();
+        Club club = clubRepository.findById(clubId).orElseThrow(ClubNotFoundException::new);
+        if (userClubRepository.existsByClub_IdAndUser_Id(clubId, userId)) {
+            throw new AlreadyJoinedClubException();
+        }
+        if (club.getMemberCount() >= club.getUserLimit()) {
+            throw new ClubFullException();
+        }
+        User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+        userClubRepository.save(UserClub.create(club, user, UserClubRole.MEMBER));
+        club.incrementMemberCount();
     }
 
     @Transactional
     public void leaveClub(Long userId, Long clubId) {
-        throw new UnsupportedOperationException();
+        Club club = clubRepository.findById(clubId).orElseThrow(ClubNotFoundException::new);
+        UserClub userClub = userClubRepository.findByClub_IdAndUser_Id(clubId, userId)
+                .orElseThrow(NotJoinedClubException::new);
+        if (userClub.getRole() == UserClubRole.LEADER) {
+            throw new ClubLeaderCannotLeaveException();
+        }
+        userClubRepository.delete(userClub);
+        club.decrementMemberCount();
     }
 
     @Transactional

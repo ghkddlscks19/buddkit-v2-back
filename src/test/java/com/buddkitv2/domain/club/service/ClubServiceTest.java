@@ -18,8 +18,12 @@ import com.buddkitv2.domain.user.repository.InterestRepository;
 import com.buddkitv2.domain.user.repository.UserRepository;
 import com.buddkitv2.global.config.S3Service;
 import com.buddkitv2.global.config.TossPaymentClient;
+import com.buddkitv2.global.exception.AlreadyJoinedClubException;
 import com.buddkitv2.global.exception.ClubAccessDeniedException;
+import com.buddkitv2.global.exception.ClubFullException;
+import com.buddkitv2.global.exception.ClubLeaderCannotLeaveException;
 import com.buddkitv2.global.exception.ClubNotFoundException;
+import com.buddkitv2.global.exception.NotJoinedClubException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -144,5 +148,71 @@ class ClubServiceTest {
     void 존재하지_않는_모임_조회_시_예외를_던진다() {
         assertThatThrownBy(() -> clubService.getClub(leader.getId(), 99999L))
                 .isInstanceOf(ClubNotFoundException.class);
+    }
+
+    @Test
+    void 모임_가입_시_memberCount가_증가하고_MEMBER로_등록된다() {
+        ClubDetailResponse created = clubService.createClub(leader.getId(), createRequest());
+        Long clubId = created.getClubId();
+
+        clubService.joinClub(other.getId(), clubId);
+
+        Club club = clubRepository.findById(clubId).orElseThrow();
+        assertThat(club.getMemberCount()).isEqualTo(2);
+        assertThat(userClubRepository.findByClub_IdAndUser_Id(clubId, other.getId()))
+                .isPresent()
+                .get()
+                .satisfies(uc -> assertThat(uc.getRole()).isEqualTo(UserClubRole.MEMBER));
+    }
+
+    @Test
+    void 이미_가입한_모임에_재가입_시_예외를_던진다() {
+        ClubDetailResponse created = clubService.createClub(leader.getId(), createRequest());
+        Long clubId = created.getClubId();
+
+        assertThatThrownBy(() -> clubService.joinClub(leader.getId(), clubId))
+                .isInstanceOf(AlreadyJoinedClubException.class);
+    }
+
+    @Test
+    void 정원이_가득_찬_모임_가입_시_예외를_던진다() {
+        ClubCreateRequest req = createRequest();
+        req.setUserLimit(1);
+        ClubDetailResponse created = clubService.createClub(leader.getId(), req);
+        Long clubId = created.getClubId();
+
+        assertThatThrownBy(() -> clubService.joinClub(other.getId(), clubId))
+                .isInstanceOf(ClubFullException.class);
+    }
+
+    @Test
+    void 모임_탈퇴_시_memberCount가_감소하고_UserClub이_삭제된다() {
+        ClubDetailResponse created = clubService.createClub(leader.getId(), createRequest());
+        Long clubId = created.getClubId();
+        clubService.joinClub(other.getId(), clubId);
+
+        clubService.leaveClub(other.getId(), clubId);
+
+        Club club = clubRepository.findById(clubId).orElseThrow();
+        assertThat(club.getMemberCount()).isEqualTo(1);
+        assertThat(userClubRepository.existsByClub_IdAndUser_Id(clubId, other.getId())).isFalse();
+    }
+
+    @Test
+    void 모임장은_탈퇴할_수_없다() {
+        ClubDetailResponse created = clubService.createClub(leader.getId(), createRequest());
+        Long clubId = created.getClubId();
+
+        assertThatThrownBy(() -> clubService.leaveClub(leader.getId(), clubId))
+                .isInstanceOf(ClubLeaderCannotLeaveException.class);
+    }
+
+    @Test
+    void 가입하지_않은_모임_탈퇴_시_예외를_던진다() {
+        ClubDetailResponse created = clubService.createClub(leader.getId(), createRequest());
+        Long clubId = created.getClubId();
+
+        assertThatThrownBy(() -> clubService.leaveClub(other.getId(), clubId))
+                .isInstanceOf(NotJoinedClubException.class);
     }
 }
