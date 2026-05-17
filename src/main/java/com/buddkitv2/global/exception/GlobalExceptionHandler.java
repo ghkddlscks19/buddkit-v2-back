@@ -114,6 +114,21 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(ApiResponse.fail(e.getMessage()));
     }
 
+    @ExceptionHandler({FeedNotFoundException.class, FeedCommentNotFoundException.class, NotLikedException.class})
+    public ResponseEntity<ApiResponse<Void>> handleFeedNotFound(RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler(FeedAccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleFeedAccessDenied(FeedAccessDeniedException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler(AlreadyLikedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAlreadyLiked(AlreadyLikedException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.fail(e.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
         return ResponseEntity.internalServerError().body(ApiResponse.fail("서버 오류가 발생했습니다."));

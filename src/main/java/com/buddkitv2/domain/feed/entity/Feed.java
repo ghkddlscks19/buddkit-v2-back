@@ -22,6 +22,9 @@ public class Feed extends BaseEntity {
     @Column(length = 255)
     private String content;
 
+    @Column(name = "like_count", nullable = false)
+    private Long likeCount = 0L;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "club_id", nullable = false)
     private Club club;
@@ -36,5 +39,17 @@ public class Feed extends BaseEntity {
         feed.club = club;
         feed.user = user;
         return feed;
+    }
+
+    public void update(String content) {
+        this.content = content;
+    }
+
+    public void incrementLike() {
+        this.likeCount++;
+    }
+
+    public void decrementLike() {
+        if (this.likeCount > 0) this.likeCount--;
     }
 }
