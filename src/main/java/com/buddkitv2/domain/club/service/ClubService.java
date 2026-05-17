@@ -4,7 +4,6 @@ import com.buddkitv2.domain.club.dto.request.ClubCreateRequest;
 import com.buddkitv2.domain.club.dto.request.ClubUpdateRequest;
 import com.buddkitv2.domain.club.dto.response.ClubDetailResponse;
 import com.buddkitv2.domain.club.entity.Club;
-import com.buddkitv2.domain.club.entity.ClubLike;
 import com.buddkitv2.domain.club.entity.UserClub;
 import com.buddkitv2.domain.club.entity.UserClubRole;
 import com.buddkitv2.domain.club.repository.ClubLikeRepository;
@@ -22,7 +21,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -37,8 +35,7 @@ public class ClubService {
     private final ClubLikeRepository clubLikeRepository;
 
     private Interest findInterest(InterestCategory category) {
-        return interestRepository.findByCategoryIn(List.of(category))
-                .stream().findFirst()
+        return interestRepository.findByCategory(category)
                 .orElseThrow(InvalidInterestException::new);
     }
 
