@@ -73,7 +73,7 @@ public class FeedController {
         return ApiResponse.ok(feedService.getFeed(userId, clubId, feedId));
     }
 
-    @PostMapping("/{feedId}/likes")
+    @PostMapping("/{feedId}/like")
     public ResponseEntity<Void> likeFeed(
             @AuthenticationPrincipal Long userId,
             @PathVariable Long clubId,
@@ -83,7 +83,7 @@ public class FeedController {
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/{feedId}/likes/me")
+    @DeleteMapping("/{feedId}/like")
     public ResponseEntity<Void> unlikeFeed(
             @AuthenticationPrincipal Long userId,
             @PathVariable Long clubId,
