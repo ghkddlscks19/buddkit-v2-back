@@ -20,6 +20,7 @@ import com.buddkitv2.domain.user.repository.InterestRepository;
 import com.buddkitv2.domain.user.repository.UserRepository;
 import com.buddkitv2.domain.wallet.repository.WalletRepository;
 import com.buddkitv2.domain.wallet.repository.WalletTransactionRepository;
+import com.buddkitv2.global.config.S3Service;
 import com.buddkitv2.global.config.TossPaymentClient;
 import com.buddkitv2.global.exception.AlreadyRegisteredException;
 import com.buddkitv2.global.security.RefreshTokenService;
@@ -65,6 +66,9 @@ class UserServiceTest {
 
     @MockitoBean
     private TossPaymentClient tossPaymentClient;
+
+    @MockitoBean
+    private S3Service s3Service;
 
     private static final Long KAKAO_ID = 99999L;
 
@@ -179,6 +183,20 @@ class UserServiceTest {
         List<LikedClubResponse> liked = userService.getLikedClubs(userId, null, 20);
 
         assertThat(liked).isEmpty();
+    }
+
+    @Test
+    void FCM_토큰_등록_후_삭제_시_null이_된다() {
+        UserService.RegisterResult result = userService.register(KAKAO_ID, request(), null);
+        Long userId = result.getUserId();
+
+        userService.saveFcmToken(userId, "fcm-device-token-abc");
+        User afterSave = userRepository.findById(userId).orElseThrow();
+        assertThat(afterSave.getFcmToken()).isEqualTo("fcm-device-token-abc");
+
+        userService.deleteFcmToken(userId);
+        User afterDelete = userRepository.findById(userId).orElseThrow();
+        assertThat(afterDelete.getFcmToken()).isNull();
     }
 
     @Test

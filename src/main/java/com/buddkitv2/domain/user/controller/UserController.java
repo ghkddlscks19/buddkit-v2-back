@@ -1,6 +1,7 @@
 package com.buddkitv2.domain.user.controller;
 
 import com.buddkitv2.domain.user.dto.request.ChargeRequest;
+import com.buddkitv2.domain.user.dto.request.FcmTokenRequest;
 import com.buddkitv2.domain.user.dto.request.ProfileUpdateRequest;
 import com.buddkitv2.domain.user.dto.request.RegisterRequest;
 import com.buddkitv2.domain.user.dto.response.ChargeResponse;
@@ -97,6 +98,21 @@ public class UserController {
             @RequestParam(defaultValue = "20") int size
     ) {
         return ApiResponse.ok(userService.getLikedClubs(userId, lastId, size));
+    }
+
+    @PutMapping("/me/fcm-token")
+    public ApiResponse<Void> saveFcmToken(
+            @AuthenticationPrincipal Long userId,
+            @RequestBody @Valid FcmTokenRequest request
+    ) {
+        userService.saveFcmToken(userId, request.getToken());
+        return ApiResponse.ok(null);
+    }
+
+    @DeleteMapping("/me/fcm-token")
+    public ResponseEntity<Void> deleteFcmToken(@AuthenticationPrincipal Long userId) {
+        userService.deleteFcmToken(userId);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

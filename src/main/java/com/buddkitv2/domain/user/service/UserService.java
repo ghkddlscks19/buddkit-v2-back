@@ -252,6 +252,20 @@ public class UserService {
         }).toList();
     }
 
+    @Transactional
+    public void saveFcmToken(Long userId, String token) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
+        user.updateFcmToken(token);
+    }
+
+    @Transactional
+    public void deleteFcmToken(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
+        user.updateFcmToken(null);
+    }
+
     @Transactional(readOnly = true)
     public List<LikedClubResponse> getLikedClubs(Long userId, Long lastId, int size) {
         Pageable pageable = PageRequest.of(0, size);
