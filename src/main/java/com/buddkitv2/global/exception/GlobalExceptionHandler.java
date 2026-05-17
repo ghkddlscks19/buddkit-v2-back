@@ -84,6 +84,36 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail(e.getMessage()));
     }
 
+    @ExceptionHandler(ScheduleNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleScheduleNotFound(ScheduleNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler(ScheduleAccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleScheduleAccessDenied(ScheduleAccessDeniedException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler({AlreadyJoinedScheduleException.class, ScheduleAlreadySettlingException.class, AlreadySettledException.class})
+    public ResponseEntity<ApiResponse<Void>> handleScheduleConflict(RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler({NotJoinedScheduleException.class, ScheduleNotRecruitingException.class, ScheduleFullException.class})
+    public ResponseEntity<ApiResponse<Void>> handleScheduleBadRequest(RuntimeException e) {
+        return ResponseEntity.badRequest().body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler(SettlementNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleSettlementNotFound(SettlementNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler(InsufficientBalanceException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInsufficientBalance(InsufficientBalanceException e) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(ApiResponse.fail(e.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
         return ResponseEntity.internalServerError().body(ApiResponse.fail("서버 오류가 발생했습니다."));
