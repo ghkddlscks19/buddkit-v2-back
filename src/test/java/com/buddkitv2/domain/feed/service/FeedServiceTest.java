@@ -351,4 +351,45 @@ class FeedServiceTest {
         assertThat(result.get(0).getContent()).isEqualTo("첫번째");
         assertThat(result.get(2).getContent()).isEqualTo("세번째");
     }
+
+    @Test
+    void 피드_목록_두번째_페이지를_cursor로_조회할_수_있다() {
+        feedService.createFeed(author.getId(), clubId, createReq("피드1", "https://s3/1.jpg"));
+        feedService.createFeed(author.getId(), clubId, createReq("피드2", "https://s3/2.jpg"));
+        feedService.createFeed(author.getId(), clubId, createReq("피드3", "https://s3/3.jpg"));
+
+        List<FeedResponse> firstPage = feedService.getFeeds(author.getId(), clubId, FeedSort.LATEST, null, null, 2);
+        Long lastId = firstPage.get(firstPage.size() - 1).getFeedId();
+
+        List<FeedResponse> secondPage = feedService.getFeeds(author.getId(), clubId, FeedSort.LATEST, lastId, null, 2);
+
+        assertThat(firstPage).hasSize(2);
+        assertThat(firstPage.get(0).getContent()).isEqualTo("피드3");
+        assertThat(secondPage).hasSize(1);
+        assertThat(secondPage.get(0).getContent()).isEqualTo("피드1");
+    }
+
+    @Test
+    void 댓글_목록_두번째_페이지를_cursor로_조회할_수_있다() {
+        FeedResponse feed = feedService.createFeed(author.getId(), clubId,
+                createReq("피드", "https://s3/img.jpg"));
+        FeedCommentRequest req1 = new FeedCommentRequest(); req1.setContent("댓글1");
+        FeedCommentRequest req2 = new FeedCommentRequest(); req2.setContent("댓글2");
+        FeedCommentRequest req3 = new FeedCommentRequest(); req3.setContent("댓글3");
+        feedService.createComment(author.getId(), clubId, feed.getFeedId(), req1);
+        feedService.createComment(author.getId(), clubId, feed.getFeedId(), req2);
+        feedService.createComment(author.getId(), clubId, feed.getFeedId(), req3);
+
+        List<FeedCommentResponse> firstPage = feedService.getComments(
+                author.getId(), clubId, feed.getFeedId(), null, 2);
+        Long lastId = firstPage.get(firstPage.size() - 1).getCommentId();
+
+        List<FeedCommentResponse> secondPage = feedService.getComments(
+                author.getId(), clubId, feed.getFeedId(), lastId, 2);
+
+        assertThat(firstPage).hasSize(2);
+        assertThat(firstPage.get(0).getContent()).isEqualTo("댓글1");
+        assertThat(secondPage).hasSize(1);
+        assertThat(secondPage.get(0).getContent()).isEqualTo("댓글3");
+    }
 }
