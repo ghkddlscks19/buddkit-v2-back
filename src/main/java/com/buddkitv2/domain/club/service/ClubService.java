@@ -4,6 +4,7 @@ import com.buddkitv2.domain.club.dto.request.ClubCreateRequest;
 import com.buddkitv2.domain.club.dto.request.ClubUpdateRequest;
 import com.buddkitv2.domain.club.dto.response.ClubDetailResponse;
 import com.buddkitv2.domain.club.entity.Club;
+import com.buddkitv2.domain.club.entity.ClubLike;
 import com.buddkitv2.domain.club.entity.UserClub;
 import com.buddkitv2.domain.club.entity.UserClubRole;
 import com.buddkitv2.domain.club.repository.ClubLikeRepository;
@@ -119,11 +120,18 @@ public class ClubService {
 
     @Transactional
     public void likeClub(Long userId, Long clubId) {
-        throw new UnsupportedOperationException();
+        Club club = clubRepository.findById(clubId).orElseThrow(ClubNotFoundException::new);
+        if (clubLikeRepository.existsByClub_IdAndUser_Id(clubId, userId)) {
+            throw new AlreadyLikedClubException();
+        }
+        User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+        clubLikeRepository.save(ClubLike.create(user, club));
     }
 
     @Transactional
     public void unlikeClub(Long userId, Long clubId) {
-        throw new UnsupportedOperationException();
+        ClubLike clubLike = clubLikeRepository.findByClub_IdAndUser_Id(clubId, userId)
+                .orElseThrow(ClubLikeNotFoundException::new);
+        clubLikeRepository.delete(clubLike);
     }
 }

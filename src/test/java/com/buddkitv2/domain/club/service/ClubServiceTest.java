@@ -19,9 +19,11 @@ import com.buddkitv2.domain.user.repository.UserRepository;
 import com.buddkitv2.global.config.S3Service;
 import com.buddkitv2.global.config.TossPaymentClient;
 import com.buddkitv2.global.exception.AlreadyJoinedClubException;
+import com.buddkitv2.global.exception.AlreadyLikedClubException;
 import com.buddkitv2.global.exception.ClubAccessDeniedException;
 import com.buddkitv2.global.exception.ClubFullException;
 import com.buddkitv2.global.exception.ClubLeaderCannotLeaveException;
+import com.buddkitv2.global.exception.ClubLikeNotFoundException;
 import com.buddkitv2.global.exception.ClubNotFoundException;
 import com.buddkitv2.global.exception.NotJoinedClubException;
 import org.junit.jupiter.api.BeforeEach;
@@ -214,5 +216,45 @@ class ClubServiceTest {
 
         assertThatThrownBy(() -> clubService.leaveClub(other.getId(), clubId))
                 .isInstanceOf(NotJoinedClubException.class);
+    }
+
+    @Test
+    void 관심_모임_등록_시_ClubLike가_생성된다() {
+        ClubDetailResponse created = clubService.createClub(leader.getId(), createRequest());
+        Long clubId = created.getClubId();
+
+        clubService.likeClub(other.getId(), clubId);
+
+        assertThat(clubLikeRepository.existsByClub_IdAndUser_Id(clubId, other.getId())).isTrue();
+    }
+
+    @Test
+    void 이미_등록된_관심_모임_재등록_시_예외를_던진다() {
+        ClubDetailResponse created = clubService.createClub(leader.getId(), createRequest());
+        Long clubId = created.getClubId();
+        clubService.likeClub(other.getId(), clubId);
+
+        assertThatThrownBy(() -> clubService.likeClub(other.getId(), clubId))
+                .isInstanceOf(AlreadyLikedClubException.class);
+    }
+
+    @Test
+    void 관심_모임_취소_시_ClubLike가_삭제된다() {
+        ClubDetailResponse created = clubService.createClub(leader.getId(), createRequest());
+        Long clubId = created.getClubId();
+        clubService.likeClub(other.getId(), clubId);
+
+        clubService.unlikeClub(other.getId(), clubId);
+
+        assertThat(clubLikeRepository.existsByClub_IdAndUser_Id(clubId, other.getId())).isFalse();
+    }
+
+    @Test
+    void 등록하지_않은_관심_모임_취소_시_예외를_던진다() {
+        ClubDetailResponse created = clubService.createClub(leader.getId(), createRequest());
+        Long clubId = created.getClubId();
+
+        assertThatThrownBy(() -> clubService.unlikeClub(other.getId(), clubId))
+                .isInstanceOf(ClubLikeNotFoundException.class);
     }
 }
