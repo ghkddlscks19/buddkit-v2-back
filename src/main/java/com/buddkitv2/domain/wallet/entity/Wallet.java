@@ -41,4 +41,8 @@ public class Wallet extends BaseEntity {
     public void charge(Long amount) {
         this.balance += amount;
     }
+
+    public void debit(Long amount) {
+        this.balance -= amount;
+    }
 }

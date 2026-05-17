@@ -52,4 +52,16 @@ public class Schedule extends BaseEntity {
         s.status = ScheduleStatus.RECRUITING;
         return s;
     }
+
+    public void update(String name, LocalDateTime scheduleTime, String location, Long cost, Integer limit) {
+        this.name = name;
+        this.scheduleTime = scheduleTime;
+        this.location = location;
+        this.cost = cost;
+        this.limit = limit;
+    }
+
+    public void changeStatus(ScheduleStatus status) {
+        this.status = status;
+    }
 }
