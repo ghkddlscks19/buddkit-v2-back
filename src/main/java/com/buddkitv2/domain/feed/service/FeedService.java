@@ -185,13 +185,15 @@ public class FeedService {
     @Transactional
     public void deleteComment(Long userId, Long clubId, Long feedId, Long commentId) {
         requireMember(clubId, userId);
-        findActiveFeed(clubId, feedId);
+        Feed feed = findActiveFeed(clubId, feedId);
         FeedComment comment = feedCommentRepository.findActiveById(commentId)
                 .orElseThrow(FeedCommentNotFoundException::new);
         if (!comment.getFeed().getId().equals(feedId)) {
             throw new FeedCommentNotFoundException();
         }
-        if (!comment.getUser().getId().equals(userId)) {
+        boolean isCommentAuthor = comment.getUser().getId().equals(userId);
+        boolean isFeedAuthor = feed.getUser().getId().equals(userId);
+        if (!isCommentAuthor && !isFeedAuthor) {
             throw new FeedAccessDeniedException();
         }
         comment.softDelete();
