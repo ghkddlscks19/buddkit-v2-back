@@ -16,20 +16,20 @@ import com.buddkitv2.domain.feed.repository.FeedCommentRepository;
 import com.buddkitv2.domain.feed.repository.FeedImageRepository;
 import com.buddkitv2.domain.feed.repository.FeedLikeRepository;
 import com.buddkitv2.domain.feed.repository.FeedRepository;
-import com.buddkitv2.domain.user.entity.User;
-import com.buddkitv2.domain.user.repository.UserRepository;
 import com.buddkitv2.global.exception.AlreadyLikedException;
 import com.buddkitv2.global.exception.FeedAccessDeniedException;
 import com.buddkitv2.global.exception.FeedCommentNotFoundException;
 import com.buddkitv2.global.exception.FeedNotFoundException;
 import com.buddkitv2.global.exception.NotLikedException;
-import com.buddkitv2.global.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -40,9 +40,6 @@ public class FeedService {
     private final FeedLikeRepository feedLikeRepository;
     private final FeedCommentRepository feedCommentRepository;
     private final UserClubRepository userClubRepository;
-    private final UserRepository userRepository;
-
-    // ── 헬퍼 ──────────────────────────────────────────────
 
     private UserClub requireMember(Long clubId, Long userId) {
         return userClubRepository.findByClub_IdAndUser_Id(clubId, userId)
@@ -69,6 +66,24 @@ public class FeedService {
         );
     }
 
+    private List<FeedResponse> toResponses(List<Feed> feeds, Long userId) {
+        if (feeds.isEmpty()) {
+            return List.of();
+        }
+        List<Long> feedIds = feeds.stream().map(Feed::getId).toList();
+        Map<Long, List<String>> imageMap = feedImageRepository.findByFeed_IdIn(feedIds)
+                .stream().collect(Collectors.groupingBy(
+                        img -> img.getFeed().getId(),
+                        Collectors.mapping(FeedImage::getImageUrl, Collectors.toList())));
+        Set<Long> likedFeedIds = feedLikeRepository.findLikedFeedIds(userId, feedIds);
+        return feeds.stream().map(feed -> new FeedResponse(
+                feed.getId(), feed.getUser().getId(), feed.getUser().getNickname(),
+                feed.getUser().getProfileImageUrl(), feed.getContent(),
+                imageMap.getOrDefault(feed.getId(), List.of()),
+                feed.getLikeCount(), likedFeedIds.contains(feed.getId()), feed.getCreatedAt()
+        )).toList();
+    }
+
     private FeedCommentResponse toCommentResponse(FeedComment comment) {
         return new FeedCommentResponse(
                 comment.getId(), comment.getUser().getId(), comment.getUser().getNickname(),
@@ -76,13 +91,10 @@ public class FeedService {
         );
     }
 
-    // ── 피드 CRUD ─────────────────────────────────────────
-
     @Transactional
     public FeedResponse createFeed(Long userId, Long clubId, FeedCreateRequest req) {
         UserClub uc = requireMember(clubId, userId);
-        User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
-        Feed feed = feedRepository.save(Feed.create(req.getContent(), uc.getClub(), user));
+        Feed feed = feedRepository.save(Feed.create(req.getContent(), uc.getClub(), uc.getUser()));
         req.getImageUrls().forEach(url -> feedImageRepository.save(FeedImage.create(url, feed)));
         return toResponse(feed, userId);
     }
@@ -121,7 +133,7 @@ public class FeedService {
                     ? feedRepository.findByClubId(clubId, PageRequest.of(0, size))
                     : feedRepository.findByClubIdAndLastId(clubId, lastId, PageRequest.of(0, size));
         }
-        return feeds.stream().map(f -> toResponse(f, userId)).toList();
+        return toResponses(feeds, userId);
     }
 
     @Transactional(readOnly = true)
@@ -131,17 +143,14 @@ public class FeedService {
         return toResponse(feed, userId);
     }
 
-    // ── 좋아요 ────────────────────────────────────────────
-
     @Transactional
     public void likeFeed(Long userId, Long clubId, Long feedId) {
-        requireMember(clubId, userId);
+        UserClub uc = requireMember(clubId, userId);
         Feed feed = findActiveFeed(clubId, feedId);
         if (feedLikeRepository.existsByFeed_IdAndUser_Id(feedId, userId)) {
             throw new AlreadyLikedException();
         }
-        User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
-        feedLikeRepository.save(FeedLike.create(feed, user));
+        feedLikeRepository.save(FeedLike.create(feed, uc.getUser()));
         feed.incrementLike();
     }
 
@@ -155,14 +164,11 @@ public class FeedService {
         feed.decrementLike();
     }
 
-    // ── 댓글 ──────────────────────────────────────────────
-
     @Transactional
     public FeedCommentResponse createComment(Long userId, Long clubId, Long feedId, FeedCommentRequest req) {
-        requireMember(clubId, userId);
+        UserClub uc = requireMember(clubId, userId);
         Feed feed = findActiveFeed(clubId, feedId);
-        User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
-        FeedComment comment = feedCommentRepository.save(FeedComment.create(req.getContent(), feed, user));
+        FeedComment comment = feedCommentRepository.save(FeedComment.create(req.getContent(), feed, uc.getUser()));
         return toCommentResponse(comment);
     }
 

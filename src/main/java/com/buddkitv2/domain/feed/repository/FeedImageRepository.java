@@ -9,5 +9,7 @@ public interface FeedImageRepository extends JpaRepository<FeedImage, Long> {
 
     List<FeedImage> findByFeed_Id(Long feedId);
 
+    List<FeedImage> findByFeed_IdIn(List<Long> feedIds);
+
     void deleteByFeed_Id(Long feedId);
 }
