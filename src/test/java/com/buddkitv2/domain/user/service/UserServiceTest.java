@@ -11,6 +11,7 @@ import com.buddkitv2.domain.user.entity.InterestCategory;
 import com.buddkitv2.domain.user.repository.InterestRepository;
 import com.buddkitv2.domain.user.repository.UserRepository;
 import com.buddkitv2.domain.wallet.repository.WalletRepository;
+import com.buddkitv2.global.exception.AlreadyRegisteredException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,7 +65,7 @@ class UserServiceTest {
         UserService.RegisterResult result = userService.register(KAKAO_ID, request(), null);
 
         assertThat(userRepository.findByKakaoId(KAKAO_ID)).isPresent();
-        assertThat(walletRepository.findById(result.getUserId())).isNotNull();
+        assertThat(walletRepository.findByUserId(result.getUserId())).isPresent();
         assertThat(result.getPoint()).isEqualTo(100_000L);
     }
 
@@ -73,7 +74,7 @@ class UserServiceTest {
         userService.register(KAKAO_ID, request(), null);
 
         assertThatThrownBy(() -> userService.register(KAKAO_ID, request(), null))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(AlreadyRegisteredException.class)
                 .hasMessage("이미 가입된 회원입니다.");
     }
 
