@@ -14,8 +14,14 @@ import com.buddkitv2.domain.user.entity.UserInterest;
 import com.buddkitv2.domain.user.repository.InterestRepository;
 import com.buddkitv2.domain.user.repository.UserInterestRepository;
 import com.buddkitv2.domain.user.repository.UserRepository;
+import com.buddkitv2.domain.club.entity.ClubLike;
+import com.buddkitv2.domain.club.entity.UserClub;
+import com.buddkitv2.domain.club.repository.ClubLikeRepository;
+import com.buddkitv2.domain.club.repository.UserClubRepository;
 import com.buddkitv2.domain.settlement.entity.UserSettlement;
 import com.buddkitv2.domain.settlement.repository.UserSettlementRepository;
+import com.buddkitv2.domain.user.dto.response.LikedClubResponse;
+import com.buddkitv2.domain.user.dto.response.MyClubResponse;
 import com.buddkitv2.domain.user.dto.response.SettlementHistoryResponse;
 import com.buddkitv2.domain.user.dto.response.TransactionResponse;
 import com.buddkitv2.domain.wallet.entity.Payment;
@@ -60,6 +66,8 @@ public class UserService {
     private final PaymentRepository paymentRepository;
     private final TossPaymentClient tossPaymentClient;
     private final UserSettlementRepository userSettlementRepository;
+    private final UserClubRepository userClubRepository;
+    private final ClubLikeRepository clubLikeRepository;
 
     private static final long SIGNUP_BONUS = 100_000L;
 
@@ -221,6 +229,48 @@ public class UserService {
                         us.getCreatedAt()
                 ))
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<MyClubResponse> getMyClubs(Long userId, Long lastId, int size) {
+        Pageable pageable = PageRequest.of(0, size);
+
+        List<UserClub> userClubs = lastId == null
+                ? userClubRepository.findByUserIdWithClub(userId, pageable)
+                : userClubRepository.findByUserIdAndLastIdWithClub(userId, lastId, pageable);
+
+        return userClubs.stream().map(uc -> {
+            var club = uc.getClub();
+            var addr = club.getAddress();
+            var interest = club.getInterest();
+            return new MyClubResponse(
+                    club.getId(), club.getName(), club.getClubImage(),
+                    interest.getCategory(), interest.getName(),
+                    addr.getCity(), addr.getDistrict(),
+                    club.getMemberCount(), uc.getRole().name()
+            );
+        }).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<LikedClubResponse> getLikedClubs(Long userId, Long lastId, int size) {
+        Pageable pageable = PageRequest.of(0, size);
+
+        List<ClubLike> clubLikes = lastId == null
+                ? clubLikeRepository.findByUserIdWithClub(userId, pageable)
+                : clubLikeRepository.findByUserIdAndLastIdWithClub(userId, lastId, pageable);
+
+        return clubLikes.stream().map(cl -> {
+            var club = cl.getClub();
+            var addr = club.getAddress();
+            var interest = club.getInterest();
+            return new LikedClubResponse(
+                    club.getId(), club.getName(), club.getClubImage(),
+                    interest.getCategory(), interest.getName(),
+                    addr.getCity(), addr.getDistrict(),
+                    club.getMemberCount()
+            );
+        }).toList();
     }
 
     @Getter

@@ -4,6 +4,8 @@ import com.buddkitv2.domain.user.dto.request.ChargeRequest;
 import com.buddkitv2.domain.user.dto.request.ProfileUpdateRequest;
 import com.buddkitv2.domain.user.dto.request.RegisterRequest;
 import com.buddkitv2.domain.user.dto.response.ChargeResponse;
+import com.buddkitv2.domain.user.dto.response.LikedClubResponse;
+import com.buddkitv2.domain.user.dto.response.MyClubResponse;
 import com.buddkitv2.domain.user.dto.response.MyPageResponse;
 import com.buddkitv2.domain.user.dto.response.TransactionResponse;
 import com.buddkitv2.domain.wallet.entity.WalletTransactionType;
@@ -157,6 +159,26 @@ class UserServiceTest {
         User user = userRepository.findById(userId).orElseThrow();
         assertThat(user.getStatus()).isEqualTo(UserStatus.WITHDRAWN);
         assertThat(user.getFcmToken()).isNull();
+    }
+
+    @Test
+    void 가입한_모임이_없으면_빈_목록을_반환한다() {
+        UserService.RegisterResult result = userService.register(KAKAO_ID, request(), null);
+        Long userId = result.getUserId();
+
+        List<MyClubResponse> clubs = userService.getMyClubs(userId, null, 20);
+
+        assertThat(clubs).isEmpty();
+    }
+
+    @Test
+    void 관심_모임이_없으면_빈_목록을_반환한다() {
+        UserService.RegisterResult result = userService.register(KAKAO_ID, request(), null);
+        Long userId = result.getUserId();
+
+        List<LikedClubResponse> liked = userService.getLikedClubs(userId, null, 20);
+
+        assertThat(liked).isEmpty();
     }
 
     @Test

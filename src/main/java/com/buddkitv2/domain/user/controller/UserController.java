@@ -4,6 +4,8 @@ import com.buddkitv2.domain.user.dto.request.ChargeRequest;
 import com.buddkitv2.domain.user.dto.request.ProfileUpdateRequest;
 import com.buddkitv2.domain.user.dto.request.RegisterRequest;
 import com.buddkitv2.domain.user.dto.response.ChargeResponse;
+import com.buddkitv2.domain.user.dto.response.LikedClubResponse;
+import com.buddkitv2.domain.user.dto.response.MyClubResponse;
 import com.buddkitv2.domain.user.dto.response.MyPageResponse;
 import com.buddkitv2.domain.user.dto.response.RegisterResponse;
 import com.buddkitv2.domain.user.dto.response.SettlementHistoryResponse;
@@ -77,6 +79,24 @@ public class UserController {
             @RequestParam(defaultValue = "20") int size
     ) {
         return ApiResponse.ok(userService.getSettlements(userId, lastId, size));
+    }
+
+    @GetMapping("/me/clubs")
+    public ApiResponse<List<MyClubResponse>> getMyClubs(
+            @AuthenticationPrincipal Long userId,
+            @RequestParam(required = false) Long lastId,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return ApiResponse.ok(userService.getMyClubs(userId, lastId, size));
+    }
+
+    @GetMapping("/me/liked-clubs")
+    public ApiResponse<List<LikedClubResponse>> getLikedClubs(
+            @AuthenticationPrincipal Long userId,
+            @RequestParam(required = false) Long lastId,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return ApiResponse.ok(userService.getLikedClubs(userId, lastId, size));
     }
 
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
