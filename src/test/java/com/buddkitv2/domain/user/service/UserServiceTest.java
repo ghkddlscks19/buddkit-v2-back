@@ -1,7 +1,9 @@
 package com.buddkitv2.domain.user.service;
 
+import com.buddkitv2.domain.user.dto.request.ChargeRequest;
 import com.buddkitv2.domain.user.dto.request.ProfileUpdateRequest;
 import com.buddkitv2.domain.user.dto.request.RegisterRequest;
+import com.buddkitv2.domain.user.dto.response.ChargeResponse;
 import com.buddkitv2.domain.user.dto.response.MyPageResponse;
 import com.buddkitv2.domain.common.Address;
 import com.buddkitv2.domain.common.AddressRepository;
@@ -13,19 +15,24 @@ import com.buddkitv2.domain.user.entity.UserStatus;
 import com.buddkitv2.domain.user.repository.InterestRepository;
 import com.buddkitv2.domain.user.repository.UserRepository;
 import com.buddkitv2.domain.wallet.repository.WalletRepository;
+import com.buddkitv2.domain.wallet.repository.WalletTransactionRepository;
+import com.buddkitv2.global.config.TossPaymentClient;
 import com.buddkitv2.global.exception.AlreadyRegisteredException;
 import com.buddkitv2.global.security.RefreshTokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.BDDMockito.given;
 
 @SpringBootTest
 @Transactional
@@ -48,6 +55,12 @@ class UserServiceTest {
 
     @Autowired
     private RefreshTokenService refreshTokenService;
+
+    @Autowired
+    private WalletTransactionRepository walletTransactionRepository;
+
+    @MockitoBean
+    private TossPaymentClient tossPaymentClient;
 
     private static final Long KAKAO_ID = 99999L;
 
@@ -104,6 +117,32 @@ class UserServiceTest {
         assertThat(profile.getNickname()).isEqualTo("변경닉네임");
         assertThat(profile.getCity()).isEqualTo("부산광역시");
         assertThat(profile.getInterestList()).containsExactly(InterestCategory.SPORTS);
+    }
+
+    @Test
+    void 충전_성공_시_잔액이_증가한다() {
+        UserService.RegisterResult result = userService.register(KAKAO_ID, request(), null);
+        Long userId = result.getUserId();
+        Long initialBalance = result.getPoint(); // 100_000L
+
+        String paymentKey = "test_pk_123";
+        String orderId = "order_001";
+        Long amount = 50_000L;
+
+        given(tossPaymentClient.confirm(paymentKey, orderId, amount))
+                .willReturn(new TossPaymentClient.TossConfirmResult(
+                        paymentKey, orderId, "카드", amount,
+                        LocalDateTime.of(2026, 1, 1, 10, 0)
+                ));
+
+        ChargeRequest chargeRequest = new ChargeRequest();
+        chargeRequest.setPaymentKey(paymentKey);
+        chargeRequest.setOrderId(orderId);
+        chargeRequest.setAmount(amount);
+
+        ChargeResponse response = userService.chargeWallet(userId, chargeRequest);
+
+        assertThat(response.getBalance()).isEqualTo(initialBalance + amount);
     }
 
     @Test

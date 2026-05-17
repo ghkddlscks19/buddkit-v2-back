@@ -1,7 +1,9 @@
 package com.buddkitv2.domain.user.controller;
 
+import com.buddkitv2.domain.user.dto.request.ChargeRequest;
 import com.buddkitv2.domain.user.dto.request.ProfileUpdateRequest;
 import com.buddkitv2.domain.user.dto.request.RegisterRequest;
+import com.buddkitv2.domain.user.dto.response.ChargeResponse;
 import com.buddkitv2.domain.user.dto.response.MyPageResponse;
 import com.buddkitv2.domain.user.dto.response.RegisterResponse;
 import com.buddkitv2.global.common.ApiResponse;
@@ -26,6 +28,14 @@ public class UserController {
     private final TempTokenService tempTokenService;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
+
+    @PostMapping("/me/wallet/charge")
+    public ApiResponse<ChargeResponse> chargeWallet(
+            @AuthenticationPrincipal Long userId,
+            @RequestBody @Valid ChargeRequest request
+    ) {
+        return ApiResponse.ok(userService.chargeWallet(userId, request));
+    }
 
     @DeleteMapping("/me")
     public ResponseEntity<Void> withdraw(@AuthenticationPrincipal Long userId) {

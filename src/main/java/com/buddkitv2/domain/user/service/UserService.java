@@ -1,7 +1,9 @@
 package com.buddkitv2.domain.user.service;
 
+import com.buddkitv2.domain.user.dto.request.ChargeRequest;
 import com.buddkitv2.domain.user.dto.request.ProfileUpdateRequest;
 import com.buddkitv2.domain.user.dto.request.RegisterRequest;
+import com.buddkitv2.domain.user.dto.response.ChargeResponse;
 import com.buddkitv2.domain.user.dto.response.MyPageResponse;
 import com.buddkitv2.domain.common.Address;
 import com.buddkitv2.domain.common.AddressRepository;
@@ -12,9 +14,15 @@ import com.buddkitv2.domain.user.entity.UserInterest;
 import com.buddkitv2.domain.user.repository.InterestRepository;
 import com.buddkitv2.domain.user.repository.UserInterestRepository;
 import com.buddkitv2.domain.user.repository.UserRepository;
+import com.buddkitv2.domain.wallet.entity.Payment;
 import com.buddkitv2.domain.wallet.entity.Wallet;
+import com.buddkitv2.domain.wallet.entity.WalletTransaction;
+import com.buddkitv2.domain.wallet.entity.WalletTransactionType;
+import com.buddkitv2.domain.wallet.repository.PaymentRepository;
 import com.buddkitv2.domain.wallet.repository.WalletRepository;
+import com.buddkitv2.domain.wallet.repository.WalletTransactionRepository;
 import com.buddkitv2.global.config.S3Service;
+import com.buddkitv2.global.config.TossPaymentClient;
 import com.buddkitv2.global.exception.AlreadyRegisteredException;
 import com.buddkitv2.global.security.RefreshTokenService;
 import com.buddkitv2.global.exception.InvalidAddressException;
@@ -42,6 +50,9 @@ public class UserService {
     private final WalletRepository walletRepository;
     private final S3Service s3Service;
     private final RefreshTokenService refreshTokenService;
+    private final WalletTransactionRepository walletTransactionRepository;
+    private final PaymentRepository paymentRepository;
+    private final TossPaymentClient tossPaymentClient;
 
     private static final long SIGNUP_BONUS = 100_000L;
 
@@ -140,6 +151,34 @@ public class UserService {
         user.withdraw();
         user.updateFcmToken(null);
         refreshTokenService.delete(userId);
+    }
+
+    @Transactional
+    public ChargeResponse chargeWallet(Long userId, ChargeRequest request) {
+        Wallet wallet = walletRepository.findByUserId(userId)
+                .orElseThrow(WalletNotFoundException::new);
+
+        TossPaymentClient.TossConfirmResult confirmed =
+                tossPaymentClient.confirm(request.getPaymentKey(), request.getOrderId(), request.getAmount());
+
+        WalletTransaction transaction = WalletTransaction.create(
+                wallet, wallet, WalletTransactionType.CHARGE, confirmed.totalAmount()
+        );
+        walletTransactionRepository.save(transaction);
+
+        Payment payment = Payment.create(
+                transaction,
+                confirmed.paymentKey(),
+                confirmed.orderId(),
+                confirmed.method(),
+                confirmed.totalAmount(),
+                confirmed.approvedAt()
+        );
+        paymentRepository.save(payment);
+
+        wallet.charge(confirmed.totalAmount());
+
+        return new ChargeResponse(wallet.getBalance());
     }
 
     @Getter
