@@ -37,4 +37,8 @@ public class Wallet extends BaseEntity {
         w.balance = bonus;
         return w;
     }
+
+    public void charge(Long amount) {
+        this.balance += amount;
+    }
 }

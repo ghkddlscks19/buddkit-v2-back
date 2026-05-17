@@ -1,5 +1,6 @@
 package com.buddkitv2.domain.user.dto.response;
 
+import com.buddkitv2.domain.user.entity.Gender;
 import com.buddkitv2.domain.user.entity.InterestCategory;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,6 +17,7 @@ public class MyPageResponse {
     private String city;
     private String district;
     private LocalDate birth;
+    private Gender gender;
     private List<InterestCategory> interestList;
     private Long balance;
 }

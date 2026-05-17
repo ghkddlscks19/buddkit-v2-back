@@ -44,6 +44,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(ApiResponse.fail(e.getMessage()));
     }
 
+    @ExceptionHandler(TossPaymentException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTossPayment(TossPaymentException e) {
+        return ResponseEntity.badRequest().body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler(WithdrawnUserException.class)
+    public ResponseEntity<ApiResponse<Void>> handleWithdrawnUser(WithdrawnUserException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.fail(e.getMessage()));
+    }
+
     @ExceptionHandler({FileUploadException.class, WalletNotFoundException.class})
     public ResponseEntity<ApiResponse<Void>> handleInternalError(RuntimeException e) {
         return ResponseEntity.internalServerError().body(ApiResponse.fail(e.getMessage()));

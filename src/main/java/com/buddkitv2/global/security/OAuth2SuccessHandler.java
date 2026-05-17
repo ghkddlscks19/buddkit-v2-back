@@ -2,6 +2,8 @@ package com.buddkitv2.global.security;
 
 import com.buddkitv2.domain.user.service.UserService;
 import com.buddkitv2.domain.user.entity.User;
+import com.buddkitv2.domain.user.entity.UserStatus;
+import com.buddkitv2.global.exception.WithdrawnUserException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +42,11 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         if (existing.isPresent()) {
             User user = existing.get();
+
+            if (user.getStatus() == UserStatus.WITHDRAWN) {
+                throw new WithdrawnUserException();
+            }
+
             String accessToken = jwtTokenProvider.generateAccessToken(user.getId());
             String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
             refreshTokenService.save(user.getId(), refreshToken);

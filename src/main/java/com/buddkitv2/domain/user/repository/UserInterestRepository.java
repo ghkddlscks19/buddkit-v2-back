@@ -11,4 +11,6 @@ public interface UserInterestRepository extends JpaRepository<UserInterest, Long
 
     @Query("SELECT ui FROM UserInterest ui JOIN FETCH ui.interest WHERE ui.user.id = :userId")
     List<UserInterest> findByUserIdWithInterest(@Param("userId") Long userId);
+
+    void deleteAllByUserId(Long userId);
 }

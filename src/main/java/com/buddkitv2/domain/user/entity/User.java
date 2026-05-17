@@ -71,4 +71,10 @@ public class User extends BaseEntity {
     public void withdraw() {
         this.status = UserStatus.WITHDRAWN;
     }
+
+    public void updateProfile(String nickname, Address address, String profileImageUrl) {
+        this.nickname = nickname;
+        this.address = address;
+        this.profileImageUrl = profileImageUrl;
+    }
 }

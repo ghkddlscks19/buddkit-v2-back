@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,5 +41,11 @@ public class AuthController {
 
         String newAccessToken = jwtTokenProvider.generateAccessToken(userId);
         return ResponseEntity.ok(ApiResponse.ok(new TokenResponse(newAccessToken, rt)));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@AuthenticationPrincipal Long userId) {
+        refreshTokenService.delete(userId);
+        return ResponseEntity.noContent().build();
     }
 }
