@@ -59,6 +59,31 @@ public class GlobalExceptionHandler {
         return ResponseEntity.internalServerError().body(ApiResponse.fail(e.getMessage()));
     }
 
+    @ExceptionHandler(ClubNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleClubNotFound(ClubNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler(ClubAccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleClubAccessDenied(ClubAccessDeniedException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler({ClubFullException.class, AlreadyJoinedClubException.class, AlreadyLikedClubException.class})
+    public ResponseEntity<ApiResponse<Void>> handleClubConflict(RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler({NotJoinedClubException.class, ClubLeaderCannotLeaveException.class})
+    public ResponseEntity<ApiResponse<Void>> handleClubBadRequest(RuntimeException e) {
+        return ResponseEntity.badRequest().body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler(ClubLikeNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleClubLikeNotFound(ClubLikeNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail(e.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
         return ResponseEntity.internalServerError().body(ApiResponse.fail("서버 오류가 발생했습니다."));
