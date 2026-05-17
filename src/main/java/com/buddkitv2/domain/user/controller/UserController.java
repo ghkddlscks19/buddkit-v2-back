@@ -12,6 +12,7 @@ import com.buddkitv2.global.security.TempTokenService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,6 +26,12 @@ public class UserController {
     private final TempTokenService tempTokenService;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
+
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> withdraw(@AuthenticationPrincipal Long userId) {
+        userService.withdraw(userId);
+        return ResponseEntity.noContent().build();
+    }
 
     @GetMapping("/me")
     public ApiResponse<MyPageResponse> getMyPage(@AuthenticationPrincipal Long userId) {

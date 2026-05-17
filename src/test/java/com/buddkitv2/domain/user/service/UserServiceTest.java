@@ -8,10 +8,13 @@ import com.buddkitv2.domain.common.AddressRepository;
 import com.buddkitv2.domain.user.entity.Gender;
 import com.buddkitv2.domain.user.entity.Interest;
 import com.buddkitv2.domain.user.entity.InterestCategory;
+import com.buddkitv2.domain.user.entity.User;
+import com.buddkitv2.domain.user.entity.UserStatus;
 import com.buddkitv2.domain.user.repository.InterestRepository;
 import com.buddkitv2.domain.user.repository.UserRepository;
 import com.buddkitv2.domain.wallet.repository.WalletRepository;
 import com.buddkitv2.global.exception.AlreadyRegisteredException;
+import com.buddkitv2.global.security.RefreshTokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +45,9 @@ class UserServiceTest {
 
     @Autowired
     private WalletRepository walletRepository;
+
+    @Autowired
+    private RefreshTokenService refreshTokenService;
 
     private static final Long KAKAO_ID = 99999L;
 
@@ -98,5 +104,17 @@ class UserServiceTest {
         assertThat(profile.getNickname()).isEqualTo("변경닉네임");
         assertThat(profile.getCity()).isEqualTo("부산광역시");
         assertThat(profile.getInterestList()).containsExactly(InterestCategory.SPORTS);
+    }
+
+    @Test
+    void 회원탈퇴_시_상태가_WITHDRAWN으로_변경된다() {
+        UserService.RegisterResult result = userService.register(KAKAO_ID, request(), null);
+        Long userId = result.getUserId();
+
+        userService.withdraw(userId);
+
+        User user = userRepository.findById(userId).orElseThrow();
+        assertThat(user.getStatus()).isEqualTo(UserStatus.WITHDRAWN);
+        assertThat(user.getFcmToken()).isNull();
     }
 }

@@ -16,6 +16,7 @@ import com.buddkitv2.domain.wallet.entity.Wallet;
 import com.buddkitv2.domain.wallet.repository.WalletRepository;
 import com.buddkitv2.global.config.S3Service;
 import com.buddkitv2.global.exception.AlreadyRegisteredException;
+import com.buddkitv2.global.security.RefreshTokenService;
 import com.buddkitv2.global.exception.InvalidAddressException;
 import com.buddkitv2.global.exception.InvalidInterestException;
 import com.buddkitv2.global.exception.UserNotFoundException;
@@ -40,6 +41,7 @@ public class UserService {
     private final UserInterestRepository userInterestRepository;
     private final WalletRepository walletRepository;
     private final S3Service s3Service;
+    private final RefreshTokenService refreshTokenService;
 
     private static final long SIGNUP_BONUS = 100_000L;
 
@@ -129,6 +131,15 @@ public class UserService {
         interests.forEach(interest -> userInterestRepository.save(UserInterest.create(user, interest)));
 
         return getMyPage(userId);
+    }
+
+    @Transactional
+    public void withdraw(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
+        user.withdraw();
+        user.updateFcmToken(null);
+        refreshTokenService.delete(userId);
     }
 
     @Getter
