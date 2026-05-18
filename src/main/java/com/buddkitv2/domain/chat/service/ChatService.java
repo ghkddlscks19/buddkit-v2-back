@@ -19,7 +19,6 @@ import com.buddkitv2.global.exception.MessageNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -36,21 +35,21 @@ public class ChatService {
 
     // ── 자동 생성/삭제 ──────────────────────────────────────────
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public void createChatRoomForClub(Club club, User user) {
         ChatRoom chatRoom = ChatRoom.createClubRoom(club);
         chatRoomRepository.save(chatRoom);
         userChatRoomRepository.save(UserChatRoom.create(chatRoom, user, ChatRoomRole.LEADER));
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public void createChatRoomForSchedule(Club club, Long scheduleId, User user) {
         ChatRoom chatRoom = ChatRoom.createScheduleRoom(club, scheduleId);
         chatRoomRepository.save(chatRoom);
         userChatRoomRepository.save(UserChatRoom.create(chatRoom, user, ChatRoomRole.LEADER));
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public void addClubMember(Long clubId, User user) {
         ChatRoom chatRoom = chatRoomRepository.findByClub_IdAndType(clubId, ChatRoomType.CLUB)
                 .orElseThrow(ChatRoomNotFoundException::new);
@@ -59,7 +58,7 @@ public class ChatService {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public void addScheduleMember(Long scheduleId, User user) {
         // 스케줄 채팅방이 없는 경우(동시성 등) 무시
         chatRoomRepository.findByScheduleId(scheduleId).ifPresent(chatRoom -> {
@@ -69,19 +68,19 @@ public class ChatService {
         });
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public void removeClubMember(Long clubId, Long userId) {
         chatRoomRepository.findByClub_IdAndType(clubId, ChatRoomType.CLUB).ifPresent(chatRoom ->
                 userChatRoomRepository.deleteByChatRoom_IdAndUser_Id(chatRoom.getId(), userId));
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public void removeScheduleMember(Long scheduleId, Long userId) {
         chatRoomRepository.findByScheduleId(scheduleId).ifPresent(chatRoom ->
                 userChatRoomRepository.deleteByChatRoom_IdAndUser_Id(chatRoom.getId(), userId));
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public void deleteChatRoomsByScheduleId(Long scheduleId) {
         chatRoomRepository.findByScheduleId(scheduleId).ifPresent(chatRoom -> {
             messageRepository.deleteAllByChatRoomId(chatRoom.getId());
@@ -92,7 +91,7 @@ public class ChatService {
 
     // ── REST API ───────────────────────────────────────────────
 
-    @Transactional(propagation = Propagation.REQUIRED, readOnly = true)
+    @Transactional(readOnly = true)
     public List<ChatRoomResponse> getChatRooms(Long userId, Long clubId) {
         List<ChatRoom> chatRooms = chatRoomRepository.findByClub_Id(clubId);
         if (chatRooms.isEmpty()) throw new ChatAccessDeniedException();
@@ -110,7 +109,7 @@ public class ChatService {
                 .toList();
     }
 
-    @Transactional(propagation = Propagation.REQUIRED, readOnly = true)
+    @Transactional(readOnly = true)
     public List<MessageResponse> getMessages(Long userId, Long clubId, Long chatRoomId, Long lastId, int size) {
         requireChatRoomAccess(userId, clubId, chatRoomId);
         PageRequest pageable = PageRequest.of(0, size);
@@ -120,7 +119,7 @@ public class ChatService {
         return messages.stream().map(this::toMessageResponse).toList();
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public void deleteMessage(Long userId, Long clubId, Long chatRoomId, Long messageId) {
         requireChatRoomAccess(userId, clubId, chatRoomId);
         Message message = messageRepository.findById(messageId)
@@ -129,7 +128,7 @@ public class ChatService {
         message.softDelete();
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public void markAsReadToLatest(Long userId, Long clubId, Long chatRoomId) {
         requireChatRoomAccess(userId, clubId, chatRoomId);
         UserChatRoom ucr = userChatRoomRepository.findByChatRoom_IdAndUser_Id(chatRoomId, userId)
@@ -140,7 +139,7 @@ public class ChatService {
 
     // ── STOMP 핸들러에서 호출 ────────────────────────────────────
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public MessageResponse sendMessage(Long userId, Long chatRoomId, String text) {
         UserChatRoom ucr = userChatRoomRepository.findByChatRoom_IdAndUser_Id(chatRoomId, userId)
                 .orElseThrow(ChatAccessDeniedException::new);
@@ -151,7 +150,7 @@ public class ChatService {
         return toMessageResponse(message);
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public void markAsRead(Long userId, Long chatRoomId, Long lastReadMessageId) {
         UserChatRoom ucr = userChatRoomRepository.findByChatRoom_IdAndUser_Id(chatRoomId, userId)
                 .orElseThrow(ChatAccessDeniedException::new);
