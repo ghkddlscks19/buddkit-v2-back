@@ -62,6 +62,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                                        WebSocketHandler wsHandler, Map<String, Object> attributes) {
             if (request instanceof ServletServerHttpRequest servletRequest) {
                 String header = servletRequest.getServletRequest().getHeader("Authorization");
+                // 토큰 없으면 익명 연결 허용(userId=null), 토큰이 있으나 유효하지 않으면 연결 거부
                 if (header != null && header.startsWith("Bearer ")) {
                     try {
                         Long userId = jwtTokenProvider.getUserId(header.substring(7));

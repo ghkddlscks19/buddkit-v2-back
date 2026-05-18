@@ -1,6 +1,7 @@
 package com.buddkitv2.global.config;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -10,6 +11,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.nio.charset.StandardCharsets;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ChatSubscriber implements MessageListener {
@@ -25,7 +27,7 @@ public class ChatSubscriber implements MessageListener {
             JsonNode payload = objectMapper.readTree(message.getBody());
             messagingTemplate.convertAndSend("/topic/chat-rooms/" + chatRoomId, payload);
         } catch (Exception e) {
-            // 역직렬화 실패 시 브로드캐스트 생략
+            log.warn("채팅 메시지 브로드캐스트 실패 — channel: {}", channel, e);
         }
     }
 }
