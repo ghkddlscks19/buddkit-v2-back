@@ -85,7 +85,7 @@ public class ChatService {
         chatRoomRepository.findByScheduleId(scheduleId).ifPresent(chatRoom -> {
             messageRepository.deleteAllByChatRoomId(chatRoom.getId());
             userChatRoomRepository.deleteAllByChatRoomId(chatRoom.getId());
-            chatRoomRepository.delete(chatRoom);
+            chatRoomRepository.deleteById(chatRoom.getId());
         });
     }
 
@@ -94,7 +94,7 @@ public class ChatService {
     @Transactional(readOnly = true)
     public List<ChatRoomResponse> getChatRooms(Long userId, Long clubId) {
         List<ChatRoom> chatRooms = chatRoomRepository.findByClub_Id(clubId);
-        if (chatRooms.isEmpty()) throw new ChatAccessDeniedException();
+        if (chatRooms.isEmpty()) throw new ChatRoomNotFoundException();
 
         List<Long> chatRoomIds = chatRooms.stream().map(ChatRoom::getId).toList();
         List<UserChatRoom> ucrs = userChatRoomRepository.findByUser_IdAndChatRoom_IdIn(userId, chatRoomIds);
