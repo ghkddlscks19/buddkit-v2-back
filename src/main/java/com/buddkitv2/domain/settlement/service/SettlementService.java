@@ -22,6 +22,8 @@ import com.buddkitv2.domain.wallet.entity.WalletTransaction;
 import com.buddkitv2.domain.wallet.entity.WalletTransactionType;
 import com.buddkitv2.domain.wallet.repository.WalletRepository;
 import com.buddkitv2.domain.wallet.repository.WalletTransactionRepository;
+import com.buddkitv2.domain.notification.dto.event.NotificationEventPayload;
+import com.buddkitv2.domain.notification.entity.NotificationTypeEnum;
 import com.buddkitv2.global.exception.AlreadySettledException;
 import com.buddkitv2.global.exception.InsufficientBalanceException;
 import com.buddkitv2.global.exception.ScheduleAccessDeniedException;
@@ -31,8 +33,10 @@ import com.buddkitv2.global.exception.SettlementNotFoundException;
 import com.buddkitv2.global.exception.WalletNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 
@@ -47,6 +51,8 @@ public class SettlementService {
     private final UserClubRepository userClubRepository;
     private final WalletRepository walletRepository;
     private final WalletTransactionRepository walletTransactionRepository;
+    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final ObjectMapper objectMapper;
 
     // ── 헬퍼 ──────────────────────────────────────────────
 
@@ -131,6 +137,8 @@ public class SettlementService {
 
         for (UserSchedule us : members) {
             userSettlementRepository.save(UserSettlement.create(us.getUser(), settlement));
+            emitNotification(NotificationTypeEnum.SETTLEMENT, us.getUser().getId(),
+                    leaderUser.getNickname() + "님이 정산을 요청했습니다.");
         }
     }
 
@@ -194,5 +202,14 @@ public class SettlementService {
         }
         userSettlement.complete();
         refreshSettlementStatus(settlement);
+    }
+
+    private void emitNotification(NotificationTypeEnum type, Long targetUserId, String content) {
+        try {
+            kafkaTemplate.send("notification-events", String.valueOf(targetUserId),
+                    objectMapper.writeValueAsString(new NotificationEventPayload(type, targetUserId, content)));
+        } catch (Exception e) {
+            // 알림 emit 실패는 정산 동작에 영향 없음
+        }
     }
 }
