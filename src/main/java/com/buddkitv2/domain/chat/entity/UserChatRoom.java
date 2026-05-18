@@ -38,4 +38,8 @@ public class UserChatRoom {
         ucr.role = role;
         return ucr;
     }
+
+    public void updateLastRead(Long lastReadMessageId) {
+        this.lastReadMessageId = lastReadMessageId;
+    }
 }

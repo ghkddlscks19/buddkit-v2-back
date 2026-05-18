@@ -42,4 +42,8 @@ public class Message {
         m.sentAt = LocalDateTime.now();
         return m;
     }
+
+    public void softDelete() {
+        this.deletedAt = LocalDateTime.now();
+    }
 }
