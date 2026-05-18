@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.fail(e.getMessage()));
     }
 
-    @ExceptionHandler({InvalidAddressException.class, InvalidInterestException.class})
+    @ExceptionHandler({InvalidAddressException.class, InvalidInterestException.class, InvalidSearchConditionException.class})
     public ResponseEntity<ApiResponse<Void>> handleBadRequest(RuntimeException e) {
         return ResponseEntity.badRequest().body(ApiResponse.fail(e.getMessage()));
     }
