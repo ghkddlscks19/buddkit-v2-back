@@ -24,7 +24,7 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     @Query("SELECT MAX(m.id) FROM Message m WHERE m.chatRoom.id = :chatRoomId AND m.deletedAt IS NULL")
     Optional<Long> findMaxIdByChatRoomId(@Param("chatRoomId") Long chatRoomId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("DELETE FROM Message m WHERE m.chatRoom.id = :chatRoomId")
     void deleteAllByChatRoomId(@Param("chatRoomId") Long chatRoomId);
 }
