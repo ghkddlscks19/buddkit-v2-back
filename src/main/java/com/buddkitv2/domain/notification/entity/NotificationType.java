@@ -21,4 +21,11 @@ public class NotificationType {
 
     @Column(columnDefinition = "text")
     private String template;
+
+    public static NotificationType of(NotificationTypeEnum type, String template) {
+        NotificationType nt = new NotificationType();
+        nt.type = type;
+        nt.template = template;
+        return nt;
+    }
 }
