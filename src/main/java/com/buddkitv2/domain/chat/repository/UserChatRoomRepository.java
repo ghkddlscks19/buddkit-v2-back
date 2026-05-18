@@ -6,11 +6,14 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserChatRoomRepository extends JpaRepository<UserChatRoom, String> {
 
     Optional<UserChatRoom> findByChatRoom_IdAndUser_Id(Long chatRoomId, Long userId);
+
+    List<UserChatRoom> findByUser_IdAndChatRoom_IdIn(Long userId, List<Long> chatRoomIds);
 
     boolean existsByChatRoom_IdAndUser_Id(Long chatRoomId, Long userId);
 

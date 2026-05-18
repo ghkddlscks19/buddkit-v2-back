@@ -12,18 +12,18 @@ import com.buddkitv2.domain.chat.repository.MessageRepository;
 import com.buddkitv2.domain.chat.repository.UserChatRoomRepository;
 import com.buddkitv2.domain.club.entity.Club;
 import com.buddkitv2.domain.user.entity.User;
-import com.buddkitv2.domain.user.repository.UserRepository;
 import com.buddkitv2.global.exception.ChatAccessDeniedException;
 import com.buddkitv2.global.exception.ChatRoomNotFoundException;
 import com.buddkitv2.global.exception.MessageAccessDeniedException;
 import com.buddkitv2.global.exception.MessageNotFoundException;
-import com.buddkitv2.global.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,7 +32,6 @@ public class ChatService {
     private final ChatRoomRepository chatRoomRepository;
     private final MessageRepository messageRepository;
     private final UserChatRoomRepository userChatRoomRepository;
-    private final UserRepository userRepository;
 
     // ── 자동 생성/삭제 ──────────────────────────────────────────
 
@@ -61,6 +60,7 @@ public class ChatService {
 
     @Transactional
     public void addScheduleMember(Long scheduleId, User user) {
+        // 스케줄 채팅방이 없는 경우(동시성 등) 무시
         chatRoomRepository.findByScheduleId(scheduleId).ifPresent(chatRoom -> {
             if (!userChatRoomRepository.existsByChatRoom_IdAndUser_Id(chatRoom.getId(), user.getId())) {
                 userChatRoomRepository.save(UserChatRoom.create(chatRoom, user, ChatRoomRole.MEMBER));
@@ -93,9 +93,19 @@ public class ChatService {
 
     @Transactional(readOnly = true)
     public List<ChatRoomResponse> getChatRooms(Long userId, Long clubId) {
-        if (!isClubMember(userId, clubId)) throw new ChatAccessDeniedException();
-        return chatRoomRepository.findByClub_Id(clubId).stream()
-                .map(cr -> toChatRoomResponse(cr, userId))
+        List<ChatRoom> chatRooms = chatRoomRepository.findByClub_Id(clubId);
+        if (chatRooms.isEmpty()) throw new ChatAccessDeniedException();
+
+        List<Long> chatRoomIds = chatRooms.stream().map(ChatRoom::getId).toList();
+        List<UserChatRoom> ucrs = userChatRoomRepository.findByUser_IdAndChatRoom_IdIn(userId, chatRoomIds);
+        if (ucrs.isEmpty()) throw new ChatAccessDeniedException();
+
+        Map<Long, UserChatRoom> ucrMap = ucrs.stream()
+                .collect(Collectors.toMap(ucr -> ucr.getChatRoom().getId(), ucr -> ucr));
+
+        return chatRooms.stream()
+                .filter(cr -> ucrMap.containsKey(cr.getId()))
+                .map(cr -> toChatRoomResponse(cr, ucrMap.get(cr.getId())))
                 .toList();
     }
 
@@ -131,11 +141,10 @@ public class ChatService {
 
     @Transactional
     public MessageResponse sendMessage(Long userId, Long chatRoomId, String text) {
-        userChatRoomRepository.findByChatRoom_IdAndUser_Id(chatRoomId, userId)
+        UserChatRoom ucr = userChatRoomRepository.findByChatRoom_IdAndUser_Id(chatRoomId, userId)
                 .orElseThrow(ChatAccessDeniedException::new);
-        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
-                .orElseThrow(ChatRoomNotFoundException::new);
-        User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+        ChatRoom chatRoom = ucr.getChatRoom();
+        User user = ucr.getUser();
         Message message = Message.create(chatRoom, user, text);
         messageRepository.save(message);
         return toMessageResponse(message);
@@ -150,12 +159,6 @@ public class ChatService {
 
     // ── 헬퍼 ────────────────────────────────────────────────────
 
-    private boolean isClubMember(Long userId, Long clubId) {
-        return chatRoomRepository.findByClub_IdAndType(clubId, ChatRoomType.CLUB)
-                .map(cr -> userChatRoomRepository.existsByChatRoom_IdAndUser_Id(cr.getId(), userId))
-                .orElse(false);
-    }
-
     private void requireChatRoomAccess(Long userId, Long clubId, Long chatRoomId) {
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(ChatRoomNotFoundException::new);
@@ -165,25 +168,18 @@ public class ChatService {
         }
     }
 
-    private ChatRoomResponse toChatRoomResponse(ChatRoom chatRoom, Long userId) {
-        Message lastMsg = messageRepository
-                .findByChatRoomId(chatRoom.getId(), PageRequest.of(0, 1))
-                .stream().findFirst().orElse(null);
-        long unreadCount = userChatRoomRepository
-                .findByChatRoom_IdAndUser_Id(chatRoom.getId(), userId)
-                .map(ucr -> {
-                    Long lastRead = ucr.getLastReadMessageId();
-                    if (lastRead == null) {
-                        return messageRepository.countUnread(chatRoom.getId(), 0L);
-                    }
-                    return messageRepository.countUnread(chatRoom.getId(), lastRead);
-                })
-                .orElse(0L);
+    private ChatRoomResponse toChatRoomResponse(ChatRoom chatRoom, UserChatRoom ucr) {
+        List<Message> lastMsgs = messageRepository.findByChatRoomId(chatRoom.getId(), PageRequest.of(0, 1));
+        Message lastMsg = lastMsgs.isEmpty() ? null : lastMsgs.get(0);
+
+        Long lastRead = ucr.getLastReadMessageId();
+        long unreadCount = messageRepository.countUnread(chatRoom.getId(), lastRead != null ? lastRead : 0L);
+
         return new ChatRoomResponse(
                 chatRoom.getId(),
                 chatRoom.getType(),
                 chatRoom.getScheduleId(),
-                lastMsg != null && lastMsg.getDeletedAt() == null ? lastMsg.getText() : null,
+                lastMsg != null ? lastMsg.getText() : null,
                 lastMsg != null ? lastMsg.getSentAt() : null,
                 unreadCount
         );
