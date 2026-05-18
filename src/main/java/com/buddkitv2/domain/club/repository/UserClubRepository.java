@@ -20,4 +20,22 @@ public interface UserClubRepository extends JpaRepository<UserClub, Long> {
     Optional<UserClub> findByClub_IdAndUser_Id(Long clubId, Long userId);
 
     boolean existsByClub_IdAndUser_Id(Long clubId, Long userId);
+
+    @Query("SELECT uc.club.id FROM UserClub uc WHERE uc.user.id = :userId")
+    List<Long> findClubIdsByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT uc2.club as club, COUNT(DISTINCT shared.user) as overlap " +
+           "FROM UserClub uc1 " +
+           "JOIN UserClub shared ON uc1.club.id = shared.club.id " +
+           "JOIN UserClub uc2 ON shared.user.id = uc2.user.id " +
+           "WHERE uc1.user.id = :userId " +
+           "  AND shared.user.id != :userId " +
+           "  AND uc2.club.id NOT IN :myClubIds " +
+           "  AND uc2.club.deletedAt IS NULL " +
+           "GROUP BY uc2.club " +
+           "ORDER BY COUNT(DISTINCT shared.user) DESC")
+    List<ClubOverlapProjection> findCoMemberClubs(
+            @Param("userId") Long userId,
+            @Param("myClubIds") List<Long> myClubIds,
+            Pageable pageable);
 }

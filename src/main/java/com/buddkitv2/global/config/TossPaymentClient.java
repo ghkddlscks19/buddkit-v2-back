@@ -22,8 +22,8 @@ public class TossPaymentClient {
     @Value("${toss.secret-key}")
     private String secretKey;
 
-    public TossPaymentClient(RestClient.Builder restClientBuilder) {
-        this.restClient = restClientBuilder.build();
+    public TossPaymentClient() {
+        this.restClient = RestClient.builder().build();
     }
 
     public TossConfirmResult confirm(String paymentKey, String orderId, Long amount) {

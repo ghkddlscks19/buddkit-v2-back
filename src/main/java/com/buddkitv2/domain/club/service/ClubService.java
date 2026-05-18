@@ -13,6 +13,7 @@ import com.buddkitv2.domain.club.repository.ClubRepository;
 import com.buddkitv2.domain.club.repository.UserClubRepository;
 import com.buddkitv2.domain.common.Address;
 import com.buddkitv2.domain.common.AddressRepository;
+import com.buddkitv2.domain.search.event.ClubEventPayload;
 import com.buddkitv2.domain.user.entity.Interest;
 import com.buddkitv2.domain.user.entity.InterestCategory;
 import com.buddkitv2.domain.user.entity.User;
@@ -20,8 +21,10 @@ import com.buddkitv2.domain.user.repository.InterestRepository;
 import com.buddkitv2.domain.user.repository.UserRepository;
 import com.buddkitv2.global.exception.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.Optional;
 
@@ -36,6 +39,31 @@ public class ClubService {
     private final UserClubRepository userClubRepository;
     private final ClubLikeRepository clubLikeRepository;
     private final ChatService chatService;
+    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final ObjectMapper objectMapper;
+
+    private void emitClubEvent(String eventType, Club club) {
+        try {
+            ClubEventPayload payload = new ClubEventPayload(
+                    eventType,
+                    club.getId(),
+                    club.getName(),
+                    club.getDescription(),
+                    club.getAddress().getCity(),
+                    club.getAddress().getDistrict(),
+                    club.getInterest().getCategory().name(),
+                    club.getInterest().getName(),
+                    club.getMemberCount(),
+                    club.getUserLimit(),
+                    club.getClubImage(),
+                    club.getDeletedAt()
+            );
+            kafkaTemplate.send("club-events", String.valueOf(club.getId()),
+                    objectMapper.writeValueAsString(payload));
+        } catch (Exception e) {
+            // ES 동기화 실패는 Club CRUD에 영향 없음
+        }
+    }
 
     private Interest findInterest(InterestCategory category) {
         return interestRepository.findByCategory(category)
@@ -71,6 +99,7 @@ public class ClubService {
         Club club = Club.create(request.getName(), request.getUserLimit(), request.getDescription(),
                 request.getClubImage(), address, interest);
         clubRepository.save(club);
+        emitClubEvent("CREATED", club);
         userClubRepository.save(UserClub.create(club, user, UserClubRole.LEADER));
         chatService.createChatRoomForClub(club, user);
         return buildDetailResponse(club, userId);
@@ -86,6 +115,7 @@ public class ClubService {
         Interest interest = findInterest(request.getInterestCategory());
         club.update(request.getName(), request.getUserLimit(), request.getDescription(),
                 request.getClubImage(), address, interest);
+        emitClubEvent("UPDATED", club);
         return buildDetailResponse(club, userId);
     }
 

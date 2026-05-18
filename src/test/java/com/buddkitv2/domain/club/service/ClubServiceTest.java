@@ -30,6 +30,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,6 +53,7 @@ class ClubServiceTest {
 
     @MockitoBean TossPaymentClient tossPaymentClient;
     @MockitoBean S3Service s3Service;
+    @MockitoBean KafkaTemplate<String, String> kafkaTemplate;
 
     private User leader;
     private User other;
