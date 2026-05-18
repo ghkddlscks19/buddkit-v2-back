@@ -37,7 +37,7 @@ out/
 .vscode/
 
 ### Superpowers (AI planning artifacts) ###
-docs/superpowers/
+# docs/superpowers/ tracked intentionally
 
 ### Secrets ###
 src/main/resources/application*.yml

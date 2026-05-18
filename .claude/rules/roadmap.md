@@ -120,13 +120,17 @@
 
 ## 8단계 — SEARCH
 
-**목표:** 모임 검색 및 맞춤 추천
+**목표:** 모임 검색 및 맞춤 추천 (Elasticsearch + Kafka 기반)
 
 **선행 조건:** 3단계 완료
 
 **완료 기준:**
-- [ ] 키워드 검색 API (모임명, 해시태그 — 부분 문자열 매칭)
-- [ ] 관심사 필터 검색 API
-- [ ] 지역 필터 검색 API
-- [ ] 맞춤 모임 추천 API (관심사 + 지역 기반)
-- [ ] 무한 스크롤 구현
+- [ ] ES `club` 인덱스 설계 및 nori 형태소 분석기 설정
+- [ ] ClubService → `club-events` Kafka 토픽 emit 추가
+- [ ] SearchEventConsumer (club-events → ES upsert/delete)
+- [ ] 키워드+필터 통합 검색 API (모임명+description 부분 매칭, 관심사/지역 필터)
+- [ ] 맞춤 모임 추천 API (관심사+지역 function_score 스코어링)
+- [ ] co-member 추천 API (내 모임 멤버 겹침 기준, JPA)
+- [ ] 행동 이벤트 emit API (POST /search/clubs/{clubId}/view → user-behavior-events 토픽)
+- [ ] 무한 스크롤 (cursor 기반)
+- [ ] Phase 2 준비: ES `user-behavior` 인덱스 설계 (emit만, 소비는 Phase 2)
