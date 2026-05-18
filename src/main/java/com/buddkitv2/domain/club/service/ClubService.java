@@ -1,5 +1,6 @@
 package com.buddkitv2.domain.club.service;
 
+import com.buddkitv2.domain.chat.service.ChatService;
 import com.buddkitv2.domain.club.dto.request.ClubCreateRequest;
 import com.buddkitv2.domain.club.dto.request.ClubUpdateRequest;
 import com.buddkitv2.domain.club.dto.response.ClubDetailResponse;
@@ -34,6 +35,7 @@ public class ClubService {
     private final InterestRepository interestRepository;
     private final UserClubRepository userClubRepository;
     private final ClubLikeRepository clubLikeRepository;
+    private final ChatService chatService;
 
     private Interest findInterest(InterestCategory category) {
         return interestRepository.findByCategory(category)
@@ -70,6 +72,7 @@ public class ClubService {
                 request.getClubImage(), address, interest);
         clubRepository.save(club);
         userClubRepository.save(UserClub.create(club, user, UserClubRole.LEADER));
+        chatService.createChatRoomForClub(club, user);
         return buildDetailResponse(club, userId);
     }
 
@@ -104,6 +107,7 @@ public class ClubService {
         User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
         userClubRepository.save(UserClub.create(club, user, UserClubRole.MEMBER));
         club.incrementMemberCount();
+        chatService.addClubMember(clubId, user);
     }
 
     @Transactional
@@ -116,6 +120,7 @@ public class ClubService {
         }
         userClubRepository.delete(userClub);
         club.decrementMemberCount();
+        chatService.removeClubMember(clubId, userId);
     }
 
     @Transactional

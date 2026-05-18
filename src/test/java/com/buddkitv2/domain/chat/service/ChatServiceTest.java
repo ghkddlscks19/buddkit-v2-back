@@ -84,12 +84,7 @@ class ChatServiceTest {
                 .findFirst().orElseThrow();
         clubId = club.getId();
 
-        // Manually create chat room (Task 6 will do this automatically via ClubService integration)
-        chatService.createChatRoomForClub(club, leader);
-
         clubService.joinClub(member.getId(), clubId);
-        // Manually add member to chat room (Task 6 will integrate this into ClubService.joinClub)
-        chatService.addClubMember(clubId, member);
     }
 
     @Test
