@@ -1,5 +1,6 @@
 package com.buddkitv2.domain.schedule.service;
 
+import com.buddkitv2.domain.chat.service.ChatService;
 import com.buddkitv2.domain.club.entity.UserClub;
 import com.buddkitv2.domain.club.entity.UserClubRole;
 import com.buddkitv2.domain.club.repository.UserClubRepository;
@@ -37,6 +38,7 @@ public class ScheduleService {
     private final UserScheduleRepository userScheduleRepository;
     private final UserClubRepository userClubRepository;
     private final UserRepository userRepository;
+    private final ChatService chatService;
 
     // ── 헬퍼 ──────────────────────────────────────────────
 
@@ -81,6 +83,7 @@ public class ScheduleService {
                 req.getLocation(), req.getCost(), req.getLimit(), userClub.getClub());
         scheduleRepository.save(schedule);
         userScheduleRepository.save(UserSchedule.create(user, schedule, UserScheduleRole.LEADER));
+        chatService.createChatRoomForSchedule(userClub.getClub(), schedule.getId(), user);
         return toResponse(schedule, userId);
     }
 
@@ -99,6 +102,7 @@ public class ScheduleService {
         requireLeader(userClub);
         Schedule schedule = findActiveSchedule(clubId, scheduleId);
         schedule.softDelete();
+        chatService.deleteChatRoomsByScheduleId(scheduleId);
     }
 
     // ── 조회 ──────────────────────────────────────────────
@@ -136,6 +140,7 @@ public class ScheduleService {
         }
         User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
         userScheduleRepository.save(UserSchedule.create(user, schedule, UserScheduleRole.MEMBER));
+        chatService.addScheduleMember(scheduleId, user);
     }
 
     @Transactional
@@ -148,6 +153,7 @@ public class ScheduleService {
             throw new ScheduleAccessDeniedException();
         }
         userScheduleRepository.delete(userSchedule);
+        chatService.removeScheduleMember(scheduleId, userId);
     }
 
     // ── 참여자 목록 ────────────────────────────────────────

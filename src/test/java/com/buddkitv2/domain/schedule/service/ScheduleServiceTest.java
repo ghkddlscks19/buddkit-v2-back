@@ -25,6 +25,7 @@ import com.buddkitv2.global.config.TossPaymentClient;
 import com.buddkitv2.global.exception.AlreadyJoinedScheduleException;
 import com.buddkitv2.global.exception.ScheduleAccessDeniedException;
 import com.buddkitv2.global.exception.ScheduleFullException;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,9 +53,11 @@ class ScheduleServiceTest {
     @Autowired UserClubRepository userClubRepository;
     @Autowired ScheduleRepository scheduleRepository;
     @Autowired UserScheduleRepository userScheduleRepository;
+    @Autowired EntityManager entityManager;
 
     @MockitoBean TossPaymentClient tossPaymentClient;
     @MockitoBean S3Service s3Service;
+    @MockitoBean private com.buddkitv2.domain.chat.service.ChatService chatService;
 
     private User leader;
     private User member;

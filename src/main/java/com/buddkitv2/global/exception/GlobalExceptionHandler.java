@@ -129,6 +129,21 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.fail(e.getMessage()));
     }
 
+    @ExceptionHandler(ChatRoomNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleChatRoomNotFound(ChatRoomNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler({ChatAccessDeniedException.class, MessageAccessDeniedException.class})
+    public ResponseEntity<ApiResponse<Void>> handleChatAccessDenied(RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.fail(e.getMessage()));
+    }
+
+    @ExceptionHandler(MessageNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMessageNotFound(MessageNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail(e.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
         return ResponseEntity.internalServerError().body(ApiResponse.fail("서버 오류가 발생했습니다."));
