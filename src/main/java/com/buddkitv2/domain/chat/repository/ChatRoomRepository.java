@@ -11,8 +11,7 @@ import java.util.Optional;
 
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
 
-    @Query("SELECT cr FROM ChatRoom cr WHERE cr.club.id = :clubId AND cr.type = :type")
-    Optional<ChatRoom> findByClub_IdAndType(@Param("clubId") Long clubId, @Param("type") ChatRoomType type);
+    Optional<ChatRoom> findByClub_IdAndType(Long clubId, ChatRoomType type);
 
     @Query("SELECT cr FROM ChatRoom cr WHERE cr.scheduleId = :scheduleId")
     Optional<ChatRoom> findByScheduleId(@Param("scheduleId") Long scheduleId);
