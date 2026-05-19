@@ -16,6 +16,8 @@ import com.buddkitv2.domain.schedule.repository.ScheduleRepository;
 import com.buddkitv2.domain.schedule.repository.UserScheduleRepository;
 import com.buddkitv2.domain.user.entity.User;
 import com.buddkitv2.domain.user.repository.UserRepository;
+import com.buddkitv2.domain.notification.dto.event.NotificationEventPayload;
+import com.buddkitv2.domain.notification.entity.NotificationTypeEnum;
 import com.buddkitv2.global.exception.AlreadyJoinedScheduleException;
 import com.buddkitv2.global.exception.NotJoinedScheduleException;
 import com.buddkitv2.global.exception.ScheduleAccessDeniedException;
@@ -25,8 +27,10 @@ import com.buddkitv2.global.exception.ScheduleNotRecruitingException;
 import com.buddkitv2.global.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 
@@ -39,6 +43,8 @@ public class ScheduleService {
     private final UserClubRepository userClubRepository;
     private final UserRepository userRepository;
     private final ChatService chatService;
+    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final ObjectMapper objectMapper;
 
     // ── 헬퍼 ──────────────────────────────────────────────
 
@@ -84,6 +90,10 @@ public class ScheduleService {
         scheduleRepository.save(schedule);
         userScheduleRepository.save(UserSchedule.create(user, schedule, UserScheduleRole.LEADER));
         chatService.createChatRoomForSchedule(userClub.getClub(), schedule.getId(), user);
+        String content = userClub.getClub().getName() + " 모임에 새 정모가 생겼습니다.";
+        userClubRepository.findByClub_Id(userClub.getClub().getId()).stream()
+                .filter(uc -> !uc.getUser().getId().equals(userId))
+                .forEach(uc -> emitNotification(NotificationTypeEnum.SCHEDULE, uc.getUser().getId(), content));
         return toResponse(schedule, userId);
     }
 
@@ -170,5 +180,14 @@ public class ScheduleService {
                 us.getId(), us.getUser().getId(), us.getUser().getNickname(),
                 us.getUser().getProfileImageUrl(), us.getRole()
         )).toList();
+    }
+
+    private void emitNotification(NotificationTypeEnum type, Long targetUserId, String content) {
+        try {
+            kafkaTemplate.send("notification-events", String.valueOf(targetUserId),
+                    objectMapper.writeValueAsString(new NotificationEventPayload(type, targetUserId, content)));
+        } catch (Exception e) {
+            // 알림 emit 실패는 스케줄 동작에 영향 없음
+        }
     }
 }

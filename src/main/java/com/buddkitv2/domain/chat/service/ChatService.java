@@ -12,14 +12,18 @@ import com.buddkitv2.domain.chat.repository.MessageRepository;
 import com.buddkitv2.domain.chat.repository.UserChatRoomRepository;
 import com.buddkitv2.domain.club.entity.Club;
 import com.buddkitv2.domain.user.entity.User;
+import com.buddkitv2.domain.notification.dto.event.NotificationEventPayload;
+import com.buddkitv2.domain.notification.entity.NotificationTypeEnum;
 import com.buddkitv2.global.exception.ChatAccessDeniedException;
 import com.buddkitv2.global.exception.ChatRoomNotFoundException;
 import com.buddkitv2.global.exception.MessageAccessDeniedException;
 import com.buddkitv2.global.exception.MessageNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Map;
@@ -32,6 +36,8 @@ public class ChatService {
     private final ChatRoomRepository chatRoomRepository;
     private final MessageRepository messageRepository;
     private final UserChatRoomRepository userChatRoomRepository;
+    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final ObjectMapper objectMapper;
 
     // ── 자동 생성/삭제 ──────────────────────────────────────────
 
@@ -147,6 +153,10 @@ public class ChatService {
         User user = ucr.getUser();
         Message message = Message.create(chatRoom, user, text);
         messageRepository.save(message);
+        String chatContent = user.getNickname() + ": " + text;
+        userChatRoomRepository.findByChatRoom_Id(chatRoomId).stream()
+                .filter(m -> !m.getUser().getId().equals(userId))
+                .forEach(m -> emitNotification(NotificationTypeEnum.CHAT, m.getUser().getId(), chatContent));
         return toMessageResponse(message);
     }
 
@@ -195,5 +205,14 @@ public class ChatService {
                 message.getSentAt(),
                 deleted
         );
+    }
+
+    private void emitNotification(NotificationTypeEnum type, Long targetUserId, String content) {
+        try {
+            kafkaTemplate.send("notification-events", String.valueOf(targetUserId),
+                    objectMapper.writeValueAsString(new NotificationEventPayload(type, targetUserId, content)));
+        } catch (Exception e) {
+            // 알림 emit 실패는 채팅 동작에 영향 없음
+        }
     }
 }

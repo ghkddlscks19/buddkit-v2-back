@@ -43,4 +43,12 @@ public class Notification extends BaseEntity {
         n.fcmSent = false;
         return n;
     }
+
+    public void markAsRead() {
+        this.isRead = true;
+    }
+
+    public void markFcmSent() {
+        this.fcmSent = true;
+    }
 }

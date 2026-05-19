@@ -16,6 +16,8 @@ import com.buddkitv2.domain.feed.repository.FeedCommentRepository;
 import com.buddkitv2.domain.feed.repository.FeedImageRepository;
 import com.buddkitv2.domain.feed.repository.FeedLikeRepository;
 import com.buddkitv2.domain.feed.repository.FeedRepository;
+import com.buddkitv2.domain.notification.dto.event.NotificationEventPayload;
+import com.buddkitv2.domain.notification.entity.NotificationTypeEnum;
 import com.buddkitv2.global.exception.AlreadyLikedException;
 import com.buddkitv2.global.exception.FeedAccessDeniedException;
 import com.buddkitv2.global.exception.FeedCommentNotFoundException;
@@ -23,8 +25,10 @@ import com.buddkitv2.global.exception.FeedNotFoundException;
 import com.buddkitv2.global.exception.NotLikedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Map;
@@ -40,6 +44,8 @@ public class FeedService {
     private final FeedLikeRepository feedLikeRepository;
     private final FeedCommentRepository feedCommentRepository;
     private final UserClubRepository userClubRepository;
+    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final ObjectMapper objectMapper;
 
     private UserClub requireMember(Long clubId, Long userId) {
         return userClubRepository.findByClub_IdAndUser_Id(clubId, userId)
@@ -152,6 +158,10 @@ public class FeedService {
         }
         feedLikeRepository.save(FeedLike.create(feed, uc.getUser()));
         feed.incrementLike();
+        if (!feed.getUser().getId().equals(userId)) {
+            emitNotification(NotificationTypeEnum.LIKE, feed.getUser().getId(),
+                    uc.getUser().getNickname() + "님이 회원님의 게시물을 좋아합니다.");
+        }
     }
 
     @Transactional
@@ -169,6 +179,10 @@ public class FeedService {
         UserClub uc = requireMember(clubId, userId);
         Feed feed = findActiveFeed(clubId, feedId);
         FeedComment comment = feedCommentRepository.save(FeedComment.create(req.getContent(), feed, uc.getUser()));
+        if (!feed.getUser().getId().equals(userId)) {
+            emitNotification(NotificationTypeEnum.COMMENT, feed.getUser().getId(),
+                    uc.getUser().getNickname() + "님이 댓글을 남겼습니다.");
+        }
         return toCommentResponse(comment);
     }
 
@@ -213,5 +227,14 @@ public class FeedService {
                 ? feedCommentRepository.findByFeedId(feedId, PageRequest.of(0, size))
                 : feedCommentRepository.findByFeedIdAndLastId(feedId, lastId, PageRequest.of(0, size));
         return comments.stream().map(this::toCommentResponse).toList();
+    }
+
+    private void emitNotification(NotificationTypeEnum type, Long targetUserId, String content) {
+        try {
+            kafkaTemplate.send("notification-events", String.valueOf(targetUserId),
+                    objectMapper.writeValueAsString(new NotificationEventPayload(type, targetUserId, content)));
+        } catch (Exception e) {
+            // 알림 emit 실패는 피드 동작에 영향 없음
+        }
     }
 }
