@@ -91,7 +91,8 @@ public class ScheduleService {
         userScheduleRepository.save(UserSchedule.create(user, schedule, UserScheduleRole.LEADER));
         chatService.createChatRoomForSchedule(userClub.getClub(), schedule.getId(), user);
         String content = userClub.getClub().getName() + " 모임에 새 정모가 생겼습니다.";
-        userClubRepository.findByClub_Id(userClub.getClub().getId())
+        userClubRepository.findByClub_Id(userClub.getClub().getId()).stream()
+                .filter(uc -> !uc.getUser().getId().equals(userId))
                 .forEach(uc -> emitNotification(NotificationTypeEnum.SCHEDULE, uc.getUser().getId(), content));
         return toResponse(schedule, userId);
     }

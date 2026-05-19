@@ -4,7 +4,6 @@ import com.buddkitv2.domain.notification.dto.response.NotificationResponse;
 import com.buddkitv2.domain.notification.service.NotificationService;
 import com.buddkitv2.global.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,10 +39,10 @@ public class NotificationController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(
+    public ApiResponse<Void> delete(
             @AuthenticationPrincipal Long userId,
             @PathVariable Long id) {
         notificationService.delete(userId, id);
-        return ResponseEntity.noContent().build();
+        return ApiResponse.ok(null);
     }
 }
